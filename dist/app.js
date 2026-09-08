@@ -1,0 +1,59 @@
+import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample} from './model.js';
+const $=id=>document.getElementById(id);
+const STORAGE='ai-answer-style-lab-v1';
+const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
+let scene='web',configs={web:preset('web'),app:preset('app'),card:preset('card')};
+let source=sample,saveTimer,noticeTimer,storageWarned=false;
+try {const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved){if(Object.hasOwn(scenes,saved.scene))scene=saved.scene;for(const s of Object.keys(scenes))configs[s]=normalize(saved.configs?.[s],s);if(typeof saved.source==='string')source=saved.source;}}catch{/* A corrupt or unavailable local preference store does not block editing. */}
+const current=()=>configs[scene];
+function notify(text){$('notice').textContent=text;$('notice').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').classList.remove('show'),2600);}
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(STORAGE,JSON.stringify({scene,configs,source:$('source').value}));}catch{if(!storageWarned){notify('浏览器未能保存参数，本次编辑仍可继续。');storageWarned=true;}}},250);}
+function numberField(label,key,value,{min=0,max=160,step=1,unit='px'}={}){return `<label class="field"><span>${label}</span><span class="input-unit"><input aria-label="${label}" type="number" data-key="${key}" value="${Number(value.toFixed(4))}" min="${min}" max="${max}" step="${step}"><span class="unit">${unit}</span></span></label>`;}
+function selectField(label,key,value,options){return `<label class="field"><span>${label}</span><select data-key="${key}">${Object.entries(options).map(([k,v])=>`<option value="${k}" ${String(value)===k?'selected':''}>${v}</option>`).join('')}</select></label>`;}
+function colorField(label,key,value){return `<label class="field"><span>${label}</span><input aria-label="${label}" type="color" data-key="${key}" value="${value}"></label>`;}
+function textFields(key,s){return selectField('字体',`${key}.font`,s.font,{system:'系统字体',serif:'宋体 / 衬线',mono:'等宽字体'})+numberField('字号',`${key}.size`,s.size,{min:10,max:64})+`<label class="field"><span>行高</span><span class="line-input"><input aria-label="${labels[key]}行高" type="number" data-key="${key}.line" value="${Number(s.line.toFixed(4))}" min="${s.unit==='px'?10:.8}" max="${s.unit==='px'?160:6}" step="any"><select aria-label="${labels[key]}行高单位" data-key="${key}.unit"><option value="px" ${s.unit==='px'?'selected':''}>px</option><option value="multiplier" ${s.unit==='multiplier'?'selected':''}>倍</option></select></span></label>`+selectField('字重',`${key}.weight`,s.weight,{'400':'400 · 常规','500':'500 · 中等','600':'600 · 半粗','700':'700 · 加粗'})+colorField('文字颜色',`${key}.color`,s.color);}
+function spacingFields(key,s){return numberField('段前',`${key}.before`,s.before)+numberField('段后',`${key}.after`,s.after);}
+function section(id,title,content,open){return `<details class="control-section" data-section="${id}" ${open?'open':''}><summary>${title}</summary><div class="section-content">${content}</div></details>`;}
+function renderControls(preserve=true){
+  const open=new Set([...$('controls').querySelectorAll('details[open]')].map(el=>el.dataset.section));const c=current();
+  let html=section('layout','画布与间距',numberField('预览宽度','width',c.width,{min:280,max:1200})+numberField('左右留白','padding',c.padding,{max:80})+`<p class="hint">相邻间距 = 上一块段后与下一块段前的较大值。容器首尾不留额外空白。</p><label class="field"><span>父子标题紧凑排列</span><input type="checkbox" data-key="tightTitles" ${c.tightTitles?'checked':''}></label>`+numberField('父子标题间距','tight',c.tight,{max:80})+`<p class="hint">开启后，仅连续的父→子标题使用此值，覆盖这两个标题之间的段前／段后。</p>`,preserve?open.has('layout'):true);
+  for(const [key,label] of Object.entries(labels)){
+    let fields=key==='hr'?'':textFields(key,c[key]);
+    if(key!=='thead')fields+=spacingFields(key,c[key]);
+    if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表左缩进','indent',c.indent,{min:16,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">仅同步外部间距，不改文字样式。</p>`;
+    if(key==='ul')fields+=`<p class="hint">列表项间距与左缩进沿用有序列表设置。</p>`;
+    if(key==='table')fields+=numberField('单元格内边距','cellPadding',c.cellPadding,{max:40});
+    if(key==='hr')fields+=numberField('线条粗细','ruleWidth',c.ruleWidth,{min:1,max:8})+colorField('线条颜色','ruleColor',c.ruleColor)+`<p class="hint">上下两侧分别参与相邻间距计算，分割线本身不再附带默认 margin。</p>`;
+    html+=section(key,label,fields,preserve?open.has(key):['body','h1','h2'].includes(key));
+  }
+  $('controls').innerHTML=html;
+}
+function renderStyle(){const c=current();$('live-css').textContent=buildCSS(c);$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;}
+function renderContent(){const text=$('source').value;$('char-count').textContent=`${text.length.toLocaleString()} 字符`;try{$('answer').innerHTML=renderMarkdown(text);}catch{$('answer').textContent='这段内容暂时无法解析，请检查 Markdown 格式。';}}
+$('controls').addEventListener('input',event=>{
+  const el=event.target,key=el.dataset.key;if(!key||el.tagName==='SELECT')return;
+  const parts=key.split('.'),target=parts.length===2?current()[parts[0]]:current(),prop=parts.at(-1);
+  if(el.type==='number'){if(el.value===''||!Number.isFinite(el.valueAsNumber)||!el.validity.valid)return;target[prop]=el.valueAsNumber;}
+  else if(el.type==='checkbox')target[prop]=el.checked;
+  else target[prop]=el.value;
+  renderStyle();save();
+});
+$('controls').addEventListener('change',event=>{
+  const el=event.target,key=el.dataset.key;if(!key)return;
+  const parts=key.split('.');
+  if(el.tagName==='SELECT'){
+    const [group,prop]=parts;
+    if(prop==='unit'){current()[group]=switchUnit(current()[group],el.value);renderControls();}
+    else current()[group][prop]=prop==='weight'?Number(el.value):el.value;
+    renderStyle();save();
+  }else if(el.type==='number' && (el.value===''||!el.validity.valid)){
+    const value=parts.length===2?current()[parts[0]][parts[1]]:current()[key];el.value=Number(value.toFixed(4));notify('请输入范围内的有效数值。');
+  }
+});
+$('controls').addEventListener('click',event=>{if(event.target.id==='sync-spacing'){const {before,after}=current().ol;for(const key of ['quote','code','table'])Object.assign(current()[key],{before,after});renderControls();renderStyle();save();notify('已同步引用、代码和表格的段前／段后。');}});
+$('scene').value=scene;$('scene').addEventListener('change',()=>{scene=$('scene').value;renderControls();renderStyle();save();});
+$('source').value=source;$('source').addEventListener('input',()=>{renderContent();save();});
+$('measure').addEventListener('change',()=>$('answer').classList.toggle('measuring',$('measure').checked));
+$('reset').addEventListener('click',()=>{configs[scene]=preset(scene);renderControls();renderStyle();save();notify('已重置当前场景，Markdown 内容保持不变。');});
+$('export').addEventListener('click',()=>{const blob=new Blob([buildCSS(current())],{type:'text/css;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`ai-answer-${scene}.css`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('当前场景的样式已导出。');});
+renderControls(false);renderStyle();renderContent();
