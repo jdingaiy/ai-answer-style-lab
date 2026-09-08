@@ -8,7 +8,7 @@ export function preset(scene='web') {
   const mobile=scene==='app',card=scene==='card';
   const gap=card?8:mobile?12:16, size=mobile?17:15;
   const text=(size,line,weight=400,after=gap,font='system')=>({size,line,unit:'px',weight,color:'#242a33',font,before:0,after});
-  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:25,cellPadding:8,ruleColor:'#e2e5eb',ruleWidth:1};
+  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:25,cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,ruleColor:'#e2e5eb',ruleWidth:1};
   config.body=text(size,card?24:size*1.7);
   for(let i=1;i<=6;i++)config['h'+i]=text(card?(i<=2?16:15):(i<=2?18:mobile?17:16),card?(i<=2?25.6:24):27,i===1||i===3?700:500);
   config.ol=text(size,card?24:size*1.7);config.ul=text(size,card?24:size*1.7);
@@ -34,6 +34,8 @@ export function normalize(raw,scene) {
     if(Object.hasOwn(fonts,r.font))c[k].font=r.font;
   }
   for(const [key,min,max] of [['width',280,1200],['padding',0,80],['tight',0,80],['itemGap',0,80],['indent',16,80],['cellPadding',0,40],['ruleWidth',1,8]])c[key]=clamp(raw[key],min,max,c[key]);
+  c.columnMin=clamp(raw.columnMin,40,400,c.columnMin);
+  c.columnMax=Math.max(c.columnMin,clamp(raw.columnMax,80,600,c.columnMax));
   c.tightTitles=raw.tightTitles===true;
   if(/^#[0-9a-f]{6}$/i.test(raw.ruleColor))c.ruleColor=raw.ruleColor;
   for(const key of ['background','color'])if(/^#[0-9a-f]{6}$/i.test(raw.mark?.[key]))c.mark[key]=raw.mark[key];
@@ -50,14 +52,15 @@ export function blockGap(c,previous,next) {
 const typography=s=>`font-family:${fonts[s.font]};font-size:${s.size}px;line-height:${s.line}${s.unit==='px'?'px':''};font-weight:${s.weight};color:${s.color};`;
 export function buildCSS(c) {
   const all=Object.values(selectors).join(',');
-  let css=`/* AI 回答样式实验室 · 将 Markdown 包裹在 .answer 中。\n * 表格包裹在 .md-table 中。间距=max(上一块段后,下一块段前)，不叠加。\n * 段前/段后以元素盒为基准，不包含字体行框内部留白。 */\n.answer{${typography(c.body)}overflow-wrap:anywhere;display:flow-root;}\n.answer :where(${all}){margin:0;}\n.answer :where(h1,h2,h3,h4,h5,h6){padding:0;}\n`;
+  let css=`/* AI 回答样式实验室 · 将 Markdown 包裹在 .markdown-body 中。\n * 表格包裹在 .md-table 中。间距=max(上一块段后,下一块段前)，不叠加。\n * 段前/段后以元素盒为基准，不包含字体行框内部留白。 */\n.markdown-body{${typography(c.body)}overflow-wrap:anywhere;display:flow-root;}\n.markdown-body :where(${all}){margin:0;}\n.markdown-body :where(h1,h2,h3,h4,h5,h6){padding:0;}\n`;
   for(const [k,selector] of Object.entries(selectors)) {
-    if(k!=='hr')css+=`.answer ${selector}{${typography(c[k])}}\n`;
-    css+=`.answer ${selector}{margin-block-start:${c[k].before}px;}\n`;
+    if(k!=='hr')css+=`.markdown-body ${selector}{${typography(c[k])}}\n`;
+    css+=`.markdown-body ${selector}{margin-block-start:${c[k].before}px;}\n`;
   }
-  for(const [a,sa] of Object.entries(selectors))for(const [b,sb] of Object.entries(selectors))css+=`.answer ${sa} + ${sb}{margin-block-start:${blockGap(c,a,b)}px;}\n`;
-  css+=`.answer > :first-child,.answer :where(li,blockquote) > :first-child{margin-block-start:0;}\n.answer :where(ol,ul){padding-inline-start:${c.indent}px;}\n.answer li + li{margin-block-start:${c.itemGap}px;}\n.answer li > p,.answer blockquote > p{font:inherit;color:inherit;}\n.answer li > :last-child,.answer blockquote > :last-child{margin-block-end:0;}\n.answer blockquote{border-left:3px solid #dce1e9;padding:2px 0 2px 16px;display:flow-root;}\n.answer pre{padding:16px;background:#f6f7f9;border:1px solid #e6e9ee;border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.answer pre code{font:inherit;color:inherit;background:none;padding:0;}\n.answer :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:#f1f3f6;border-radius:4px;padding:2px 5px;}\n.answer .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid #e3e7ed;border-radius:8px;}\n.answer table{width:max-content;min-width:100%;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.answer td,.answer th{padding:${c.cellPadding}px;min-width:120px;max-width:320px;white-space:normal;overflow-wrap:anywhere;border-bottom:1px solid #e3e7ed;border-right:1px solid #e3e7ed;vertical-align:top;text-align:left;}\n.answer td{${typography(c.table)}}\n.answer th{${typography(c.thead)}background:#f5f7fa;}\n.answer tr > :last-child{border-right:0;}\n.answer tbody tr:last-child td{border-bottom:0;}\n.answer hr{border:0;height:${c.ruleWidth}px;background:${c.ruleColor};padding:0;}\n.answer a{color:#2168ee;text-decoration:none;}\n.answer a:hover{text-decoration:underline;}\n.answer strong{font-weight:700;}\n.answer img{max-width:100%;height:auto;}\n.answer input[type=checkbox]{margin-inline-end:6px;}\n`;
-  css+=`.answer mark{background-color:${c.mark.background};color:${c.mark.color};padding:0 .12em;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
+  for(const [a,sa] of Object.entries(selectors))for(const [b,sb] of Object.entries(selectors))css+=`.markdown-body ${sa} + ${sb}{margin-block-start:${blockGap(c,a,b)}px;}\n`;
+  css+=`.markdown-body > :first-child,.markdown-body :where(li,blockquote) > :first-child{margin-block-start:0;}\n.markdown-body :where(ol,ul){padding-inline-start:${c.indent}px;}\n.markdown-body li + li{margin-block-start:${c.itemGap}px;}\n.markdown-body li > p,.markdown-body blockquote > p{font:inherit;color:inherit;}\n.markdown-body li > :last-child,.markdown-body blockquote > :last-child{margin-block-end:0;}\n.markdown-body blockquote{border-left:3px solid #dce1e9;padding:2px 0 2px 16px;display:flow-root;}\n.markdown-body pre{padding:16px;background:#f6f7f9;border:1px solid #e6e9ee;border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.markdown-body pre code{font:inherit;color:inherit;background:none;padding:0;}\n.markdown-body :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:#f1f3f6;border-radius:4px;padding:2px 5px;}\n.markdown-body .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid #e3e7ed;border-radius:8px;}\n.markdown-body table{width:max-content;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.markdown-body td,.markdown-body th{padding:${c.cellPadding}px;white-space:normal;border-bottom:1px solid #e3e7ed;border-right:1px solid #e3e7ed;vertical-align:top;text-align:left;}\n.markdown-body td{${typography(c.table)}}\n.markdown-body th{${typography(c.thead)}background:#f5f7fa;}\n.markdown-body tr > :last-child{border-right:0;}\n.markdown-body tbody tr:last-child td{border-bottom:0;}\n.markdown-body hr{border:0;height:${c.ruleWidth}px;background:${c.ruleColor};padding:0;}\n.markdown-body a{color:#2168ee;text-decoration:none;}\n.markdown-body a:hover{text-decoration:underline;}\n.markdown-body strong{font-weight:700;}\n.markdown-body img{max-width:100%;height:auto;}\n.markdown-body input[type=checkbox]{margin-inline-end:6px;}\n`;
+  css+=`.markdown-body mark{background-color:${c.mark.background};color:${c.mark.color};padding:0 .12em;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
+  css+=`.markdown-body .md-cell{box-sizing:content-box;width:max-content;min-width:${c.columnMin}px;max-width:${Math.max(c.columnMin,c.columnMax)}px;white-space:normal;overflow-wrap:anywhere;word-break:normal;}\n`;
   return css;
 }
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -78,7 +81,7 @@ const parser=new Marked({gfm:true,breaks:false,renderer:{
   },
   link({href,tokens}){const label=this.parser.parseInline(tokens);const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`:label;},
   image({href,text}){const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">[图片：${escapeHTML(text)}]</a>`:`[图片：${escapeHTML(text)}]`;},
-  table(token){let header='',body='';for(const cell of token.header)header+=this.tablecell(cell);for(const row of token.rows){let cells='';for(const cell of row)cells+=this.tablecell(cell);body+=`<tr>${cells}</tr>`;}return `<div class="md-table" tabindex="0" role="region" aria-label="表格，可左右滚动"><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></div>`;}
+  table(token){let header='',body='';const renderCell=cell=>this.tablecell(cell).replace(/^(<(?:th|td)[^>]*>)([\s\S]*)(<\/(?:th|td)>)/, '$1<div class="md-cell">$2</div>$3');for(const cell of token.header)header+=renderCell(cell);for(const row of token.rows){let cells='';for(const cell of row)cells+=renderCell(cell);body+=`<tr>${cells}</tr>`;}return `<div class="md-table" tabindex="0" role="region" aria-label="表格，可左右滚动"><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></div>`;}
 }});
 export function renderMarkdown(source){return parser.parse(source);}
 export const sample=`# 如何让 AI 回答更容易阅读？
@@ -123,11 +126,11 @@ export const sample=`# 如何让 AI 回答更容易阅读？
 
 ~~~css
 /* 相邻内容只保留一个有效间距 */
-.answer p + h3 {
+.markdown-body p + h3 {
   margin-top: 24px;
 }
 
-.answer h2 + h3 {
+.markdown-body h2 + h3 {
   margin-top: 8px;
 }
 ~~~

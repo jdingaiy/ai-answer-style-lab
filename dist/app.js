@@ -22,14 +22,14 @@ function renderControls(preserve=true){
     if(key!=='thead')fields+=spacingFields(key,c[key]);
     if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表左缩进','indent',c.indent,{min:16,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">仅同步外部间距，不改文字样式。</p>`;
     if(key==='ul')fields+=`<p class="hint">列表项间距与左缩进沿用有序列表设置。</p>`;
-    if(key==='table')fields+=numberField('单元格内边距','cellPadding',c.cellPadding,{max:40});
+    if(key==='table')fields+=numberField('单元格内边距','cellPadding',c.cellPadding,{max:40})+numberField('列内容最小宽度','columnMin',c.columnMin,{min:40,max:400})+numberField('列内容最大宽度','columnMax',c.columnMax,{min:80,max:600})+`<p class="hint">短内容按需占宽，长内容达到上限后换行；表格总宽超出时左右滑动。列宽另加两侧内边距。</p>`;
     if(key==='hr')fields+=numberField('线条粗细','ruleWidth',c.ruleWidth,{min:1,max:8})+colorField('线条颜色','ruleColor',c.ruleColor)+`<p class="hint">上下两侧分别参与相邻间距计算，分割线本身不再附带默认 margin。</p>`;
     html+=section(key,label,fields,preserve?open.has(key):['body','h1','h2'].includes(key));
   }
   html+=section('mark','Mark · 高亮',colorField('高亮背景','mark.background',c.mark.background)+colorField('高亮文字','mark.color',c.mark.color)+`<p class="hint">使用 &lt;mark&gt;文字&lt;/mark&gt;，可在高亮中加入加粗和斜体。</p>`,preserve?open.has('mark'):true);
   $('controls').innerHTML=html;
 }
-function renderStyle(){const c=current(),css=buildCSS(c);$('live-css').textContent=css;const preview=$('css-preview'),top=preview.scrollTop,left=preview.scrollLeft;preview.value=css;preview.scrollTop=top;preview.scrollLeft=left;$('css-hint').textContent=`${scenes[scene]} · 随参数实时更新 · 作用于 .answer`;$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;}
+function renderStyle(){const c=current(),css=buildCSS(c);$('live-css').textContent=css;const preview=$('css-preview'),top=preview.scrollTop,left=preview.scrollLeft;preview.value=css;preview.scrollTop=top;preview.scrollLeft=left;$('css-hint').textContent=`${scenes[scene]} · 随参数实时更新 · 作用于 .markdown-body`;$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;}
 function renderContent(){const text=$('source').value;$('char-count').textContent=`${text.length.toLocaleString()} 字符`;try{$('answer').innerHTML=renderMarkdown(text);}catch{$('answer').textContent='这段内容暂时无法解析，请检查 Markdown 格式。';}}
 $('controls').addEventListener('input',event=>{
   const el=event.target,key=el.dataset.key;if(!key||el.tagName==='SELECT')return;
@@ -37,6 +37,8 @@ $('controls').addEventListener('input',event=>{
   if(el.type==='number'){if(el.value===''||!Number.isFinite(el.valueAsNumber)||!el.validity.valid)return;target[prop]=el.valueAsNumber;}
   else if(el.type==='checkbox')target[prop]=el.checked;
   else target[prop]=el.value;
+  if(key==='columnMin' && current().columnMax<current().columnMin){current().columnMax=current().columnMin;$('controls').querySelector('[data-key="columnMax"]').value=current().columnMax;}
+  if(key==='columnMax' && current().columnMin>current().columnMax){current().columnMin=current().columnMax;$('controls').querySelector('[data-key="columnMin"]').value=current().columnMin;}
   renderStyle();save();
 });
 $('controls').addEventListener('change',event=>{
