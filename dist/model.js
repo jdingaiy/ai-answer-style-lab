@@ -17,6 +17,7 @@ export function preset(scene='web') {
   config.table=text(size,card?24:size*1.7,400,16);
   config.thead=text(size,card?24:size*1.7,600,0);
   config.hr={before:gap,after:gap};
+  config.mark={background:'#fff2a8',color:'#242a33'};
   return config;
 }
 export function normalize(raw,scene) {
@@ -35,6 +36,7 @@ export function normalize(raw,scene) {
   for(const [key,min,max] of [['width',280,1200],['padding',0,80],['tight',0,80],['itemGap',0,80],['indent',16,80],['cellPadding',0,40],['ruleWidth',1,8]])c[key]=clamp(raw[key],min,max,c[key]);
   c.tightTitles=raw.tightTitles===true;
   if(/^#[0-9a-f]{6}$/i.test(raw.ruleColor))c.ruleColor=raw.ruleColor;
+  for(const key of ['background','color'])if(/^#[0-9a-f]{6}$/i.test(raw.mark?.[key]))c.mark[key]=raw.mark[key];
   return c;
 }
 export function switchUnit(style,unit) {
@@ -55,6 +57,7 @@ export function buildCSS(c) {
   }
   for(const [a,sa] of Object.entries(selectors))for(const [b,sb] of Object.entries(selectors))css+=`.answer ${sa} + ${sb}{margin-block-start:${blockGap(c,a,b)}px;}\n`;
   css+=`.answer > :first-child,.answer :where(li,blockquote) > :first-child{margin-block-start:0;}\n.answer :where(ol,ul){padding-inline-start:${c.indent}px;}\n.answer li + li{margin-block-start:${c.itemGap}px;}\n.answer li > p,.answer blockquote > p{font:inherit;color:inherit;}\n.answer li > :last-child,.answer blockquote > :last-child{margin-block-end:0;}\n.answer blockquote{border-left:3px solid #dce1e9;padding:2px 0 2px 16px;display:flow-root;}\n.answer pre{padding:16px;background:#f6f7f9;border:1px solid #e6e9ee;border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.answer pre code{font:inherit;color:inherit;background:none;padding:0;}\n.answer :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:#f1f3f6;border-radius:4px;padding:2px 5px;}\n.answer .md-table{overflow-x:auto;border:1px solid #e3e7ed;border-radius:8px;}\n.answer table{width:100%;border-collapse:collapse;font:inherit;color:inherit;}\n.answer td,.answer th{padding:${c.cellPadding}px;min-width:80px;border-bottom:1px solid #e3e7ed;border-right:1px solid #e3e7ed;vertical-align:top;text-align:left;}\n.answer td{${typography(c.table)}}\n.answer th{${typography(c.thead)}background:#f5f7fa;}\n.answer tr > :last-child{border-right:0;}\n.answer tbody tr:last-child td{border-bottom:0;}\n.answer hr{border:0;height:${c.ruleWidth}px;background:${c.ruleColor};padding:0;}\n.answer a{color:#2168ee;text-decoration:none;}\n.answer a:hover{text-decoration:underline;}\n.answer strong{font-weight:700;}\n.answer img{max-width:100%;height:auto;}\n.answer input[type=checkbox]{margin-inline-end:6px;}\n`;
+  css+=`.answer mark{background-color:${c.mark.background};color:${c.mark.color};padding:0 .12em;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
   return css;
 }
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -64,7 +67,15 @@ export function safeURL(href) {
   return escapeHTML(href);
 }
 const parser=new Marked({gfm:true,breaks:false,renderer:{
-  html({text}){return escapeHTML(text);},
+  html({text}){
+    // Allow only the inert mark element; never forward user-supplied attributes.
+    const mark=text.match(/^<(\/?)mark(?:\s[^<>]*)?>$/i);
+    // A mark on its own line is tokenized as an HTML block by GFM.
+    // Re-tokenize that block inline so emphasis works and every tag still
+    // passes through this attribute-stripping / escaping renderer.
+    if(!mark && /^<mark(?:\s[^<>]*)?>/i.test(text))return parser.parseInline(text);
+    return mark?`<${mark[1]}mark>`:escapeHTML(text);
+  },
   link({href,tokens}){const label=this.parser.parseInline(tokens);const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`:label;},
   image({href,text}){const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">[图片：${escapeHTML(text)}]</a>`:`[图片：${escapeHTML(text)}]`;},
   table(token){let header='',body='';for(const cell of token.header)header+=this.tablecell(cell);for(const row of token.rows){let cells='';for(const cell of row)cells+=this.tablecell(cell);body+=`<tr>${cells}</tr>`;}return `<div class="md-table"><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></div>`;}
@@ -73,6 +84,8 @@ export function renderMarkdown(source){return parser.parse(source);}
 export const sample=`# 如何让 AI 回答更容易阅读？
 
 好的排版不仅是文字整齐，更要让读者一眼看懂**哪些内容属于同一组**。在这里，你可以边修改 Markdown，边调试回答的字号、行高和模块间距。
+
+<mark>结合你的89㎡两居室需求，最推荐优先比较**半包＋独立设计师**组合方案，并为18万元总预算保留应急空间。</mark> 高亮可以跨行显示，也可以与加粗一起使用。
 
 ## 先建立清晰的阅读层级
 
@@ -137,5 +150,5 @@ export const sample=`# 如何让 AI 回答更容易阅读？
 - [x] 检查表头与表格正文
 - [ ] 对照真实回答调整参数
 
-**提示：** 原始 HTML 会显示为文本，图片仅显示链接；编辑内容不会触发外部图片加载。
+**提示：** 支持 mark 高亮及其中的加粗、斜体；其他原始 HTML 显示为文本，图片仅显示链接。下方 CSS 样式预览区可查看、复制当前场景的完整样式。
 `;

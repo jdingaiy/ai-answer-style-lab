@@ -26,9 +26,10 @@ function renderControls(preserve=true){
     if(key==='hr')fields+=numberField('线条粗细','ruleWidth',c.ruleWidth,{min:1,max:8})+colorField('线条颜色','ruleColor',c.ruleColor)+`<p class="hint">上下两侧分别参与相邻间距计算，分割线本身不再附带默认 margin。</p>`;
     html+=section(key,label,fields,preserve?open.has(key):['body','h1','h2'].includes(key));
   }
+  html+=section('mark','Mark · 高亮',colorField('高亮背景','mark.background',c.mark.background)+colorField('高亮文字','mark.color',c.mark.color)+`<p class="hint">使用 &lt;mark&gt;文字&lt;/mark&gt;，可在高亮中加入加粗和斜体。</p>`,preserve?open.has('mark'):true);
   $('controls').innerHTML=html;
 }
-function renderStyle(){const c=current();$('live-css').textContent=buildCSS(c);$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;}
+function renderStyle(){const c=current(),css=buildCSS(c);$('live-css').textContent=css;const preview=$('css-preview'),top=preview.scrollTop,left=preview.scrollLeft;preview.value=css;preview.scrollTop=top;preview.scrollLeft=left;$('css-hint').textContent=`${scenes[scene]} · 随参数实时更新 · 作用于 .answer`;$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;}
 function renderContent(){const text=$('source').value;$('char-count').textContent=`${text.length.toLocaleString()} 字符`;try{$('answer').innerHTML=renderMarkdown(text);}catch{$('answer').textContent='这段内容暂时无法解析，请检查 Markdown 格式。';}}
 $('controls').addEventListener('input',event=>{
   const el=event.target,key=el.dataset.key;if(!key||el.tagName==='SELECT')return;
@@ -55,5 +56,6 @@ $('scene').value=scene;$('scene').addEventListener('change',()=>{scene=$('scene'
 $('source').value=source;$('source').addEventListener('input',()=>{renderContent();save();});
 $('measure').addEventListener('change',()=>$('answer').classList.toggle('measuring',$('measure').checked));
 $('reset').addEventListener('click',()=>{configs[scene]=preset(scene);renderControls();renderStyle();save();notify('已重置当前场景，Markdown 内容保持不变。');});
+$('copy-css').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('css-preview').value);notify('已复制当前场景的 CSS。');}catch{$('css-preview').focus();$('css-preview').select();notify('已选中完整 CSS，请按 Ctrl+C 或 ⌘C 复制。');}});
 $('export').addEventListener('click',()=>{const blob=new Blob([buildCSS(current())],{type:'text/css;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`ai-answer-${scene}.css`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('当前场景的样式已导出。');});
 renderControls(false);renderStyle();renderContent();
