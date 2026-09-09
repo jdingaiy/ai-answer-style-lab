@@ -1,10 +1,12 @@
 import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample} from './model.js';
 import {installGapOverlay} from './gaps.js';
+import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
 const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30;
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
-let scene='web',configs={web:preset('web'),app:preset('app'),card:preset('card')};
-let source=sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
+let scene='web';
+let source=defaultSnapshot.source||sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
+let configs=Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(defaultSnapshot.configs?.[s],s)]));
 function decodeShared(raw){try{const text=decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/'))));return JSON.parse(text);}catch{return null;}}
 function encodeShared(value){const bytes=new TextEncoder().encode(JSON.stringify(value));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 try {const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved){if(Object.hasOwn(scenes,saved.scene))scene=saved.scene;for(const s of Object.keys(scenes))configs[s]=normalize(saved.configs?.[s],s);if(typeof saved.source==='string')source=saved.source;versions=Array.isArray(saved.versions)?saved.versions.filter(v=>v&&typeof v.id==='string'&&v.configs).map(v=>({id:v.id,name:String(v.name||'未命名版本'),createdAt:v.createdAt||'',source:typeof v.source==='string'?v.source:sample,configs:Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(v.configs[s],s)]))})):[];activeVersion=typeof saved.activeVersion==='string'?saved.activeVersion:'';}}catch{/* A corrupt or unavailable local preference store does not block editing. */}
