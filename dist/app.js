@@ -2,7 +2,7 @@ import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample}
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
-const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260909-shared-v1';
+const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260909-typography-v2';
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
 let scene='web';
 let source=defaultSnapshot.source||sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
