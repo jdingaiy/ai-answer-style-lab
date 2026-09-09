@@ -6,7 +6,7 @@ export function installGapOverlay({frame,answer,toggle,getConfig}) {
   overlay.className='gap-overlay';overlay.setAttribute('aria-hidden','true');frame.append(overlay);
   let pending=0;
   const kinds={P:'body',H1:'h1',H2:'h2',H3:'h3',H4:'h4',H5:'h5',H6:'h6',OL:'ol',UL:'ul',BLOCKQUOTE:'quote',PRE:'code',IMG:'image',HR:'hr'};
-  const kind=el=>el.classList.contains('md-table')?'table':kinds[el.tagName];
+  const kind=el=>el.classList.contains('md-table')?'table':el.classList.contains('md-image')?'image':kinds[el.tagName];
   function draw(){
     pending=0;
     overlay.replaceChildren();
