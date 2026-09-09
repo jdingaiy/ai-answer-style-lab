@@ -1,4 +1,5 @@
 import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample} from './model.js';
+import {installGapOverlay} from './gaps.js';
 const $=id=>document.getElementById(id);
 const STORAGE='ai-answer-style-lab-v1';
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
@@ -6,6 +7,7 @@ let scene='web',configs={web:preset('web'),app:preset('app'),card:preset('card')
 let source=sample,saveTimer,noticeTimer,storageWarned=false;
 try {const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved){if(Object.hasOwn(scenes,saved.scene))scene=saved.scene;for(const s of Object.keys(scenes))configs[s]=normalize(saved.configs?.[s],s);if(typeof saved.source==='string')source=saved.source;}}catch{/* A corrupt or unavailable local preference store does not block editing. */}
 const current=()=>configs[scene];
+const refreshGaps=installGapOverlay({frame:$('frame'),answer:$('answer'),toggle:$('measure'),getConfig:current});
 function notify(text){$('notice').textContent=text;$('notice').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').classList.remove('show'),2600);}
 function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(STORAGE,JSON.stringify({scene,configs,source:$('source').value}));}catch{if(!storageWarned){notify('浏览器未能保存参数，本次编辑仍可继续。');storageWarned=true;}}},250);}
 function numberField(label,key,value,{min=0,max=160,step=1,unit='px'}={}){return `<label class="field"><span>${label}</span><span class="input-unit"><input aria-label="${label}" type="number" data-key="${key}" value="${Number(value.toFixed(4))}" min="${min}" max="${max}" step="${step}"><span class="unit">${unit}</span></span></label>`;}
@@ -26,11 +28,11 @@ function renderControls(preserve=true){
     if(key==='hr')fields+=numberField('线条粗细','ruleWidth',c.ruleWidth,{min:1,max:8})+colorField('线条颜色','ruleColor',c.ruleColor)+`<p class="hint">上下两侧分别参与相邻间距计算，分割线本身不再附带默认 margin。</p>`;
     html+=section(key,label,fields,preserve?open.has(key):['body','h1','h2'].includes(key));
   }
-  html+=section('mark','Mark · 高亮',colorField('高亮背景','mark.background',c.mark.background)+colorField('高亮文字','mark.color',c.mark.color)+`<p class="hint">使用 &lt;mark&gt;文字&lt;/mark&gt;，可在高亮中加入加粗和斜体。</p>`,preserve?open.has('mark'):true);
+  html+=section('highlight','Highlight · 高亮',colorField('高亮底色','highlight.background',c.highlight.background)+colorField('文字颜色','highlight.color',c.highlight.color)+`<p class="hint">&lt;highlight&gt;高亮强调&lt;/highlight&gt;：浅紫色整块底色，保留文字原有字重。</p>`,preserve?open.has('highlight'):true)+section('mark','Mark · 标记',colorField('底部标记颜色','mark.background',c.mark.background)+colorField('文字颜色','mark.color',c.mark.color)+`<p class="hint">&lt;mark&gt;这是标记内容&lt;/mark&gt;：加粗文字，底部紫色标记，支持跨行。</p>`,preserve?open.has('mark'):true);
   $('controls').innerHTML=html;
 }
-function renderStyle(){const c=current(),css=buildCSS(c);$('live-css').textContent=css;const preview=$('css-preview'),top=preview.scrollTop,left=preview.scrollLeft;preview.value=css;preview.scrollTop=top;preview.scrollLeft=left;$('css-hint').textContent=`${scenes[scene]} · 随参数实时更新 · 作用于 .markdown-body`;$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;}
-function renderContent(){const text=$('source').value;$('char-count').textContent=`${text.length.toLocaleString()} 字符`;try{$('answer').innerHTML=renderMarkdown(text);}catch{$('answer').textContent='这段内容暂时无法解析，请检查 Markdown 格式。';}}
+function renderStyle(){const c=current(),css=buildCSS(c);$('live-css').textContent=css;const preview=$('css-preview'),top=preview.scrollTop,left=preview.scrollLeft;preview.value=css;preview.scrollTop=top;preview.scrollLeft=left;$('css-hint').textContent=`${scenes[scene]} · 随参数实时更新 · 作用于 .markdown-body`;$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;refreshGaps();}
+function renderContent(){const text=$('source').value;$('char-count').textContent=`${text.length.toLocaleString()} 字符`;try{$('answer').innerHTML=renderMarkdown(text);}catch{$('answer').textContent='这段内容暂时无法解析，请检查 Markdown 格式。';}refreshGaps();}
 $('controls').addEventListener('input',event=>{
   const el=event.target,key=el.dataset.key;if(!key||el.tagName==='SELECT')return;
   const parts=key.split('.'),target=parts.length===2?current()[parts[0]]:current(),prop=parts.at(-1);

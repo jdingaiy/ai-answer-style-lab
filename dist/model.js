@@ -17,7 +17,8 @@ export function preset(scene='web') {
   config.table=text(size,card?24:size*1.7,400,16);
   config.thead=text(size,card?24:size*1.7,600,0);
   config.hr={before:gap,after:gap};
-  config.mark={background:'#fff2a8',color:'#242a33'};
+  config.mark={background:'#dcd7ff',color:'#37383c',styleVersion:2};
+  config.highlight={background:'#efecff',color:'#37383c'};
   return config;
 }
 export function normalize(raw,scene) {
@@ -38,7 +39,10 @@ export function normalize(raw,scene) {
   c.columnMax=Math.max(c.columnMin,clamp(raw.columnMax,80,600,c.columnMax));
   c.tightTitles=raw.tightTitles===true;
   if(/^#[0-9a-f]{6}$/i.test(raw.ruleColor))c.ruleColor=raw.ruleColor;
-  for(const key of ['background','color'])if(/^#[0-9a-f]{6}$/i.test(raw.mark?.[key]))c.mark[key]=raw.mark[key];
+  for(const tag of ['mark','highlight'])for(const key of ['background','color']){
+    if(tag==='mark' && raw.mark?.styleVersion!==2)continue;
+    if(/^#[0-9a-f]{6}$/i.test(raw[tag]?.[key]))c[tag][key]=raw[tag][key];
+  }
   return c;
 }
 export function switchUnit(style,unit) {
@@ -48,6 +52,13 @@ export function switchUnit(style,unit) {
 export function blockGap(c,previous,next) {
   if(c.tightTitles && /^h[1-6]$/.test(previous) && /^h[1-6]$/.test(next) && +next[1]>+previous[1])return c.tight;
   return Math.max(c[previous].after,c[next].before);
+}
+export function gapSource(c,previous,next) {
+  if(c.tightTitles && /^h[1-6]$/.test(previous) && /^h[1-6]$/.test(next) && +next[1]>+previous[1])return '父子标题间距';
+  const name=key=>/^h[1-6]$/.test(key)?key.toUpperCase():({body:'正文',ol:'有序列表',ul:'无序列表',quote:'引用',code:'代码块',table:'表格',hr:'分割线'}[key]);
+  const after=c[previous].after,before=c[next].before;
+  if(after===before)return `${name(previous)}段后 = ${name(next)}段前`;
+  return after>before?`${name(previous)}段后`:`${name(next)}段前`;
 }
 const typography=s=>`font-family:${fonts[s.font]};font-size:${s.size}px;line-height:${s.line}${s.unit==='px'?'px':''};font-weight:${s.weight};color:${s.color};`;
 export function buildCSS(c) {
@@ -59,7 +70,7 @@ export function buildCSS(c) {
   }
   for(const [a,sa] of Object.entries(selectors))for(const [b,sb] of Object.entries(selectors))css+=`.markdown-body ${sa} + ${sb}{margin-block-start:${blockGap(c,a,b)}px;}\n`;
   css+=`.markdown-body > :first-child,.markdown-body :where(li,blockquote) > :first-child{margin-block-start:0;}\n.markdown-body :where(ol,ul){padding-inline-start:${c.indent}px;}\n.markdown-body li + li{margin-block-start:${c.itemGap}px;}\n.markdown-body li > p,.markdown-body blockquote > p{font:inherit;color:inherit;}\n.markdown-body li > :last-child,.markdown-body blockquote > :last-child{margin-block-end:0;}\n.markdown-body blockquote{border-left:3px solid #dce1e9;padding:2px 0 2px 16px;display:flow-root;}\n.markdown-body pre{padding:16px;background:#f6f7f9;border:1px solid #e6e9ee;border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.markdown-body pre code{font:inherit;color:inherit;background:none;padding:0;}\n.markdown-body :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:#f1f3f6;border-radius:4px;padding:2px 5px;}\n.markdown-body .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid #e3e7ed;border-radius:8px;}\n.markdown-body table{width:max-content;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.markdown-body td,.markdown-body th{padding:${c.cellPadding}px;white-space:normal;border-bottom:1px solid #e3e7ed;border-right:1px solid #e3e7ed;vertical-align:top;text-align:left;}\n.markdown-body td{${typography(c.table)}}\n.markdown-body th{${typography(c.thead)}background:#f5f7fa;}\n.markdown-body tr > :last-child{border-right:0;}\n.markdown-body tbody tr:last-child td{border-bottom:0;}\n.markdown-body hr{border:0;height:${c.ruleWidth}px;background:${c.ruleColor};padding:0;}\n.markdown-body a{color:#2168ee;text-decoration:none;}\n.markdown-body a:hover{text-decoration:underline;}\n.markdown-body strong{font-weight:700;}\n.markdown-body img{max-width:100%;height:auto;}\n.markdown-body input[type=checkbox]{margin-inline-end:6px;}\n`;
-  css+=`.markdown-body mark{background-color:${c.mark.background};color:${c.mark.color};padding:0 .12em;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
+  css+=`.markdown-body mark{background-color:transparent;background-image:linear-gradient(${c.mark.background},${c.mark.background});background-repeat:no-repeat;background-position:0 95%;background-size:100% .5em;color:${c.mark.color};font-weight:700;padding:0;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n.markdown-body highlight{display:inline;background-color:${c.highlight.background};color:${c.highlight.color};font-weight:inherit;padding:.06em .04em;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
   css+=`.markdown-body .md-cell{box-sizing:content-box;width:max-content;min-width:${c.columnMin}px;max-width:${Math.max(c.columnMin,c.columnMax)}px;white-space:normal;overflow-wrap:anywhere;word-break:normal;}\n`;
   return css;
 }
@@ -72,12 +83,12 @@ export function safeURL(href) {
 const parser=new Marked({gfm:true,breaks:false,renderer:{
   html({text}){
     // Allow only the inert mark element; never forward user-supplied attributes.
-    const mark=text.match(/^<(\/?)mark(?:\s[^<>]*)?>$/i);
+    const mark=text.match(/^<(\/?)(mark|highlight)(?:\s[^<>]*)?>$/i);
     // A mark on its own line is tokenized as an HTML block by GFM.
     // Re-tokenize that block inline so emphasis works and every tag still
     // passes through this attribute-stripping / escaping renderer.
-    if(!mark && /^<mark(?:\s[^<>]*)?>/i.test(text))return parser.parseInline(text);
-    return mark?`<${mark[1]}mark>`:escapeHTML(text);
+    if(!mark && /^<(?:mark|highlight)(?:\s[^<>]*)?>/i.test(text))return parser.parseInline(text);
+    return mark?`<${mark[1]}${mark[2].toLowerCase()}>`:escapeHTML(text);
   },
   link({href,tokens}){const label=this.parser.parseInline(tokens);const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`:label;},
   image({href,text}){const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">[图片：${escapeHTML(text)}]</a>`:`[图片：${escapeHTML(text)}]`;},
@@ -88,7 +99,7 @@ export const sample=`# 如何让 AI 回答更容易阅读？
 
 好的排版不仅是文字整齐，更要让读者一眼看懂**哪些内容属于同一组**。在这里，你可以边修改 Markdown，边调试回答的字号、行高和模块间距。
 
-<mark>结合你的89㎡两居室需求，最推荐优先比较**半包＋独立设计师**组合方案，并为18万元总预算保留应急空间。</mark> 高亮可以跨行显示，也可以与加粗一起使用。
+<mark>结合你的89㎡两居室需求，最推荐优先比较**半包＋独立设计师**组合方案，并为18万元总预算保留应急空间。</mark> <highlight>高亮强调：这是可独立调色的整块高亮。</highlight>
 
 ## 先建立清晰的阅读层级
 
@@ -153,5 +164,5 @@ export const sample=`# 如何让 AI 回答更容易阅读？
 - [x] 检查表头与表格正文
 - [ ] 对照真实回答调整参数
 
-**提示：** 支持 mark 高亮及其中的加粗、斜体；其他原始 HTML 显示为文本，图片仅显示链接。下方 CSS 样式预览区可查看、复制当前场景的完整样式。
+**提示：** 支持 highlight 整块高亮和 mark 底部标记，以及其中的加粗、斜体；其他原始 HTML 显示为文本，图片仅显示链接。下方 CSS 样式预览区可查看、复制当前场景的完整样式。
 `;
