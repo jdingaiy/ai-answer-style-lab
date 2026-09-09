@@ -1,8 +1,8 @@
 import { Marked } from './vendor/marked.js';
 
-export const labels = { body:'正文', h1:'H1 · 一级标题', h2:'H2 · 二级标题', h3:'H3 · 三级标题', h4:'H4 · 四级标题', h5:'H5 · 五级标题', h6:'H6 · 六级标题', ol:'有序列表', ul:'无序列表', quote:'引用', code:'代码块', table:'表格正文', thead:'表格表头', hr:'分割线' };
+export const labels = { body:'正文', h1:'H1 · 一级标题', h2:'H2 · 二级标题', h3:'H3 · 三级标题', h4:'H4 · 四级标题', h5:'H5 · 五级标题', h6:'H6 · 六级标题', ol:'有序列表', ul:'无序列表', quote:'引用', code:'代码块', table:'表格正文', thead:'表格表头', image:'图片', hr:'分割线' };
 export const fonts = {system:'-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",Arial,sans-serif',serif:'"Songti SC","Noto Serif SC",serif',mono:'ui-monospace,SFMono-Regular,Consolas,monospace'};
-export const selectors = { body:'p',h1:'h1',h2:'h2',h3:'h3',h4:'h4',h5:'h5',h6:'h6',ol:'ol',ul:'ul',quote:'blockquote',code:'pre',table:'.md-table',hr:'hr' };
+export const selectors = { body:'p',h1:'h1',h2:'h2',h3:'h3',h4:'h4',h5:'h5',h6:'h6',ol:'ol',ul:'ul',quote:'blockquote',code:'pre',table:'.md-table',image:'img',hr:'hr' };
 const clamp = (n,min,max,fallback) => Number.isFinite(Number(n)) ? Math.min(max,Math.max(min,Number(n))) : fallback;
 export function preset(scene='web') {
   const mobile=scene==='app',card=scene==='card';
@@ -16,6 +16,7 @@ export function preset(scene='web') {
   config.code=text(13,17,400,16,'mono');
   config.table=text(size,card?24:size*1.7,400,16);
   config.thead=text(size,card?24:size*1.7,600,0);
+  config.image=text(size,card?24:size*1.7,400,16);
   config.hr={before:gap,after:gap};
   config.mark={background:'#dcd7ff',color:'#37383c',styleVersion:2};
   config.highlight={background:'#efecff',color:'#37383c'};
@@ -55,7 +56,7 @@ export function blockGap(c,previous,next) {
 }
 export function gapSource(c,previous,next) {
   if(c.tightTitles && /^h[1-6]$/.test(previous) && /^h[1-6]$/.test(next) && +next[1]>+previous[1])return '父子标题间距';
-  const name=key=>/^h[1-6]$/.test(key)?key.toUpperCase():({body:'正文',ol:'有序列表',ul:'无序列表',quote:'引用',code:'代码块',table:'表格',hr:'分割线'}[key]);
+  const name=key=>/^h[1-6]$/.test(key)?key.toUpperCase():({body:'正文',ol:'有序列表',ul:'无序列表',quote:'引用',code:'代码块',table:'表格',image:'图片',hr:'分割线'}[key]);
   const after=c[previous].after,before=c[next].before;
   if(after===before)return `${name(previous)}段后 = ${name(next)}段前`;
   return after>before?`${name(previous)}段后`:`${name(next)}段前`;
