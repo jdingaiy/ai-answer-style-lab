@@ -10,13 +10,17 @@ export function preset(scene='web') {
   const text=(size,line,weight=400,after=gap,font='system')=>({size,line,unit:'px',weight,color:'#242a33',font,before:0,after});
   const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:25,cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,ruleColor:'#e2e5eb',ruleWidth:1};
   config.body=text(size,card?24:size*1.7);
-  for(let i=1;i<=6;i++)config['h'+i]=text(card?(i<=2?16:15):(i<=2?18:mobile?17:16),card?(i<=2?25.6:24):27,i===1||i===3?700:500);
+  const headingSizes=card?[18,17,16,15,15,15]:mobile?[20,19,18,17,17,17]:[19,17,16,15,15,15];
+  const headingLines=card?[25.6,25.6,24,22.5,22.5,22.5]:mobile?[30,28.5,27,25.5,25.5,25.5]:[29,27,24,22.5,22.5,22.5];
+  const headingBefore=card?[16,12,10,8,8,8]:mobile?[20,16,14,10,8,8]:[24,20,16,12,10,10];
+  const headingAfter=card?[6,6,4,4,4,4]:[8,8,6,4,4,4];
+  for(let i=1;i<=6;i++){config['h'+i]=text(headingSizes[i-1],headingLines[i-1],i<=4?600:500);config['h'+i].before=headingBefore[i-1];config['h'+i].after=headingAfter[i-1];}
   config.ol=text(size,card?24:size*1.7);config.ul=text(size,card?24:size*1.7);
-  config.quote=text(size,card?24:size*1.7);config.quote.color='#657084';
-  config.code=text(13,17,400,16,'mono');
-  config.table=text(size,card?24:size*1.7,400,16);
+  config.quote=text(size,card?24:size*1.7);config.quote.color='#657084';config.quote.before=card?8:mobile?10:12;config.quote.after=card?8:mobile?10:12;
+  config.code=text(13,17,400,16,'mono');config.code.before=card?8:mobile?10:12;config.code.after=card?8:mobile?10:12;
+  config.table=text(size,card?24:size*1.7,400,16);config.table.before=card?8:mobile?10:12;config.table.after=card?8:mobile?10:12;
   config.thead=text(size,card?24:size*1.7,600,0);
-  config.image=text(size,card?24:size*1.7,400,16);
+  config.image=text(size,card?24:size*1.7,400,card?8:mobile?10:12);config.image.before=card?8:mobile?10:12;
   config.hr={before:gap,after:gap};
   config.mark={background:'#dcd7ff',color:'#37383c',styleVersion:2};
   config.highlight={background:'#efecff',color:'#37383c'};
