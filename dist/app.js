@@ -2,19 +2,20 @@ import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample}
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
-const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260909-line-rhythm-v5';
+const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260909-card-spacing-v6';
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
 let scene='web';
 let source=defaultSnapshot.source||sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
 let configs=Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(defaultSnapshot.configs?.[s],s)]));
 function applyHeadingRhythm(c){const bodySize=c.body.size,bodyAfter=c.body.after,divider=c.hr.before,lineMultiplier=c.width<=420&&c.width>=380?1.6:1.7;c.body.line=lineMultiplier;c.body.unit='multiplier';const sizes=[bodySize+5,bodySize+3,bodySize+1,bodySize,bodySize,bodySize];const before=[divider,divider-4,divider-6,divider-8,divider-8,divider-8];const after=[bodyAfter+2,bodyAfter,bodyAfter-2,bodyAfter-4,bodyAfter-4,bodyAfter-4];for(let i=1;i<=6;i++){const h=c['h'+i];h.size=sizes[i-1];h.before=Math.max(0,before[i-1]);h.after=Math.max(0,after[i-1]);h.line=lineMultiplier;h.unit='multiplier';}for(const key of ['ol','ul','table','thead']){c[key].line=lineMultiplier;c[key].unit='multiplier';}c.ol.after=bodyAfter;c.ul.after=bodyAfter;for(const key of ['quote','code','table','image'])c[key].after=bodyAfter+4;return c;}
 function applyLineRhythm(c,sceneName){const lineMultiplier=sceneName==='card'?1.6:1.7;c.body.line=lineMultiplier;c.body.unit='multiplier';for(const key of ['h1','h2','h3','h4','h5','h6','ol','ul','table','thead']){c[key].line=lineMultiplier;c[key].unit='multiplier';}return c;}
-for(const s of Object.keys(scenes))applyLineRhythm(applyHeadingRhythm(configs[s]),s);
+function applyCardSpacing(c,sceneName){if(sceneName!=='card')return c;c.hr.before=16;c.hr.after=16;c.body.after=6;return applyLineRhythm(applyHeadingRhythm(c),sceneName);}
+for(const s of Object.keys(scenes))applyCardSpacing(applyLineRhythm(applyHeadingRhythm(configs[s]),s),s);
 function decodeShared(raw){try{const text=decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/'))));return JSON.parse(text);}catch{return null;}}
 function encodeShared(value){const bytes=new TextEncoder().encode(JSON.stringify(value));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 try {const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved){if(saved.defaultConfigVersion===DEFAULT_CONFIG_VERSION){if(Object.hasOwn(scenes,saved.scene))scene=saved.scene;for(const s of Object.keys(scenes))configs[s]=normalize(saved.configs?.[s],s);if(typeof saved.source==='string')source=saved.source;}versions=Array.isArray(saved.versions)?saved.versions.filter(v=>v&&typeof v.id==='string'&&v.configs).map(v=>({id:v.id,name:String(v.name||'未命名版本'),createdAt:v.createdAt||'',source:typeof v.source==='string'?v.source:sample,configs:Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(v.configs[s],s)]))})):[];activeVersion=typeof saved.activeVersion==='string'?saved.activeVersion:'';}}catch{/* A corrupt or unavailable local preference store does not block editing. */}
-for(const s of Object.keys(scenes))applyLineRhythm(applyHeadingRhythm(configs[s]),s);
-const shared=decodeShared(new URLSearchParams(location.search).get('share')||'');if(shared?.configs){for(const s of Object.keys(scenes))configs[s]=applyLineRhythm(applyHeadingRhythm(normalize(shared.configs[s],s)),s);if(typeof shared.source==='string')source=shared.source;activeVersion='';}
+for(const s of Object.keys(scenes))applyCardSpacing(applyLineRhythm(applyHeadingRhythm(configs[s]),s),s);
+const shared=decodeShared(new URLSearchParams(location.search).get('share')||'');if(shared?.configs){for(const s of Object.keys(scenes))configs[s]=applyCardSpacing(applyLineRhythm(applyHeadingRhythm(normalize(shared.configs[s],s)),s),s);if(typeof shared.source==='string')source=shared.source;activeVersion='';}
 const current=()=>configs[scene];
 const refreshGaps=installGapOverlay({frame:$('frame'),answer:$('answer'),toggle:$('measure'),getConfig:current});
 function notify(text){$('notice').textContent=text;$('notice').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').classList.remove('show'),2600);}
