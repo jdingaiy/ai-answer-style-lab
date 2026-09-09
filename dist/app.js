@@ -2,12 +2,12 @@ import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample}
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
-const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260909-heading-rhythm-v3';
+const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260909-content-rhythm-v4';
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
 let scene='web';
 let source=defaultSnapshot.source||sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
 let configs=Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(defaultSnapshot.configs?.[s],s)]));
-function applyHeadingRhythm(c){const bodySize=c.body.size,bodyAfter=c.body.after,divider=c.hr.before;const sizes=[bodySize+5,bodySize+3,bodySize+1,bodySize,bodySize,bodySize];const before=[divider,divider-4,divider-6,divider-8,divider-8,divider-8];const after=[bodyAfter+2,bodyAfter,bodyAfter-2,bodyAfter-4,bodyAfter-4,bodyAfter-4];for(let i=1;i<=6;i++){const h=c['h'+i];h.size=sizes[i-1];h.before=Math.max(0,before[i-1]);h.after=Math.max(0,after[i-1]);h.line=Number((h.size*1.5).toFixed(2));h.unit='px';}return c;}
+function applyHeadingRhythm(c){const bodySize=c.body.size,bodyAfter=c.body.after,divider=c.hr.before;const sizes=[bodySize+5,bodySize+3,bodySize+1,bodySize,bodySize,bodySize];const before=[divider,divider-4,divider-6,divider-8,divider-8,divider-8];const after=[bodyAfter+2,bodyAfter,bodyAfter-2,bodyAfter-4,bodyAfter-4,bodyAfter-4];for(let i=1;i<=6;i++){const h=c['h'+i];h.size=sizes[i-1];h.before=Math.max(0,before[i-1]);h.after=Math.max(0,after[i-1]);h.line=Number((h.size*1.5).toFixed(2));h.unit='px';}c.ol.after=bodyAfter;c.ul.after=bodyAfter;for(const key of ['quote','code','table','image'])c[key].after=bodyAfter+4;return c;}
 for(const s of Object.keys(scenes))applyHeadingRhythm(configs[s]);
 function decodeShared(raw){try{const text=decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/'))));return JSON.parse(text);}catch{return null;}}
 function encodeShared(value){const bytes=new TextEncoder().encode(JSON.stringify(value));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
