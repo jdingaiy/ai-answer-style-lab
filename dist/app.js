@@ -5,7 +5,10 @@ const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30;
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
 let scene='web',configs={web:preset('web'),app:preset('app'),card:preset('card')};
 let source=sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
+function decodeShared(raw){try{const text=decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/'))));return JSON.parse(text);}catch{return null;}}
+function encodeShared(value){const bytes=new TextEncoder().encode(JSON.stringify(value));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 try {const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved){if(Object.hasOwn(scenes,saved.scene))scene=saved.scene;for(const s of Object.keys(scenes))configs[s]=normalize(saved.configs?.[s],s);if(typeof saved.source==='string')source=saved.source;versions=Array.isArray(saved.versions)?saved.versions.filter(v=>v&&typeof v.id==='string'&&v.configs).map(v=>({id:v.id,name:String(v.name||'未命名版本'),createdAt:v.createdAt||'',source:typeof v.source==='string'?v.source:sample,configs:Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(v.configs[s],s)]))})):[];activeVersion=typeof saved.activeVersion==='string'?saved.activeVersion:'';}}catch{/* A corrupt or unavailable local preference store does not block editing. */}
+const shared=decodeShared(new URLSearchParams(location.search).get('share')||'');if(shared?.configs){for(const s of Object.keys(scenes))configs[s]=normalize(shared.configs[s],s);if(typeof shared.source==='string')source=shared.source;activeVersion='';}
 const current=()=>configs[scene];
 const refreshGaps=installGapOverlay({frame:$('frame'),answer:$('answer'),toggle:$('measure'),getConfig:current});
 function notify(text){$('notice').textContent=text;$('notice').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').classList.remove('show'),2600);}
@@ -14,6 +17,7 @@ function save(){clearTimeout(saveTimer);saveTimer=setTimeout(persist,250);}
 function snapshot(){return {source:$('source').value,configs:Object.fromEntries(Object.keys(scenes).map(s=>[s,JSON.parse(JSON.stringify(configs[s]))]))};}
 function renderVersions(){const select=$('version');select.innerHTML='<option value="">当前编辑（未保存）</option>'+versions.map(v=>`<option value="${v.id}">${v.name}</option>`).join('');select.value=activeVersion;}
 function createVersion(){const name=prompt('给这组三端参数命名',`版本 ${versions.length+1}`)?.trim();if(!name)return;const snap=snapshot(),v={id:`v-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name,createdAt:new Date().toISOString(),...snap};versions=[v,...versions].slice(0,VERSION_LIMIT);activeVersion=v.id;renderVersions();persist();notify(`已保存版本「${name}」，包含 Web、App、卡片三套参数。`);}
+async function shareVersion(){const name=activeVersion?(versions.find(v=>v.id===activeVersion)?.name||'已保存版本'):'当前调试版本';const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('share',encodeShared({...snapshot(),name}));try{await navigator.clipboard.writeText(url.toString());notify('分享链接已复制，发送给别人即可还原当前版本。');}catch{prompt('复制下面的分享链接',url.toString());}}
 function loadVersion(id){if(!id){activeVersion='';renderVersions();return;}const v=versions.find(item=>item.id===id);if(!v)return;configs=Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(v.configs[s],s)]));source=v.source;activeVersion=v.id;$('source').value=source;$('scene').value=scene;renderControls(false);renderStyle();renderContent();persist();notify(`已切换到版本「${v.name}」。`);}
 function numberField(label,key,value,{min=0,max=160,step=1,unit='px'}={}){return `<label class="field"><span>${label}</span><span class="input-unit"><input aria-label="${label}" type="number" data-key="${key}" value="${Number(value.toFixed(4))}" min="${min}" max="${max}" step="${step}"><span class="unit">${unit}</span></span></label>`;}
 function selectField(label,key,value,options){return `<label class="field"><span>${label}</span><select data-key="${key}">${Object.entries(options).map(([k,v])=>`<option value="${k}" ${String(value)===k?'selected':''}>${v}</option>`).join('')}</select></label>`;}
@@ -64,6 +68,7 @@ $('controls').addEventListener('click',event=>{if(event.target.id==='sync-spacin
 $('scene').value=scene;$('scene').addEventListener('change',()=>{scene=$('scene').value;renderControls();renderStyle();save();});
 $('version').addEventListener('change',()=>loadVersion($('version').value));
 $('save-version').addEventListener('click',createVersion);
+$('share-version').addEventListener('click',shareVersion);
 $('delete-version').addEventListener('click',()=>{if(!activeVersion)return notify('当前还没有选中的保存版本。');const v=versions.find(item=>item.id===activeVersion);if(!confirm(`删除版本「${v?.name||''}」？`))return;versions=versions.filter(item=>item.id!==activeVersion);activeVersion='';renderVersions();persist();notify('已删除保存版本。');});
 $('source').value=source;$('source').addEventListener('input',()=>{renderContent();save();});
 $('measure').addEventListener('change',()=>$('answer').classList.toggle('measuring',$('measure').checked));
