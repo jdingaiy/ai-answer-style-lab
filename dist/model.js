@@ -91,7 +91,7 @@ const parser=new Marked({gfm:true,breaks:false,renderer:{
     return mark?`<${mark[1]}${mark[2].toLowerCase()}>`:escapeHTML(text);
   },
   link({href,tokens}){const label=this.parser.parseInline(tokens);const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`:label;},
-  image({href,text}){const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">[图片：${escapeHTML(text)}]</a>`:`[图片：${escapeHTML(text)}]`;},
+  image({href,text,title}){const url=safeURL(href);if(!url)return `[图片：${escapeHTML(text)}]`;const label=escapeHTML(text||'');const titleAttr=title?` title="${escapeHTML(title)}"`:'';return `<img src="${url}" alt="${label}" loading="lazy" decoding="async"${titleAttr}>`;},
   table(token){let header='',body='';const renderCell=cell=>this.tablecell(cell).replace(/^(<(?:th|td)[^>]*>)([\s\S]*)(<\/(?:th|td)>)/, '$1<div class="md-cell">$2</div>$3');for(const cell of token.header)header+=renderCell(cell);for(const row of token.rows){let cells='';for(const cell of row)cells+=renderCell(cell);body+=`<tr>${cells}</tr>`;}return `<div class="md-table" tabindex="0" role="region" aria-label="表格，可左右滚动"><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></div>`;}
 }});
 export function renderMarkdown(source){return parser.parse(source);}
@@ -164,5 +164,5 @@ export const sample=`# 如何让 AI 回答更容易阅读？
 - [x] 检查表头与表格正文
 - [ ] 对照真实回答调整参数
 
-**提示：** 支持 highlight 整块高亮和 mark 底部标记，以及其中的加粗、斜体；其他原始 HTML 显示为文本，图片仅显示链接。下方 CSS 样式预览区可查看、复制当前场景的完整样式。
+**提示：** 支持 highlight 整块高亮和 mark 底部标记，以及其中的加粗、斜体；图片会按 Markdown 图片语法直接渲染，并限制在内容宽度内。下方 CSS 样式预览区可查看、复制当前场景的完整样式。
 `;

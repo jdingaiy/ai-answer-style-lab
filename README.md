@@ -65,7 +65,7 @@ npm run check
 
 使用本地 vendored Marked 解析 GFM：标题、段落、列表／嵌套列表、任务列表、引用、表格、分割线、代码和链接。Marked 的 MIT 许可证位于 `dist/vendor/MARKED-LICENSE.md`。
 
-原始 HTML 仅放行 `mark` 和 `highlight` 标签，并移除其全部属性；其他 HTML 转义显示。代码块和行内代码中的标签仍保留为代码。链接仅允许 HTTP(S)、mailto 或页内锚点；图片仅渲染为链接，避免载入外部图片。数学公式、Mermaid 图与知乎专有引用组件尚未接入。
+原始 HTML 仅放行 `mark` 和 `highlight` 标签，并移除其全部属性；其他 HTML 转义显示。代码块和行内代码中的标签仍保留为代码。链接仅允许 HTTP(S)、mailto 或页内锚点；Markdown 图片允许 HTTP(S) 图片地址并直接渲染，自动限制在内容宽度内。数学公式、Mermaid 图与知乎专有引用组件尚未接入。
 
 初始基础值参考对话中的 Zhida Markdown 规范。分割线间距和未接入的低级标题使用显式 mock 值，不代表线上实现。参考站 `md-test.myagents.io` 未能读取，因此当前版本实现已明确的调试功能，外观尚未与参考站逐项核对。
 
