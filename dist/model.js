@@ -14,12 +14,12 @@ export function preset(scene='web') {
   const headingBefore=[gap,gap-4,gap-6,gap-8,gap-8,gap-8];
   const headingAfter=[config.body.after+2,config.body.after,config.body.after-2,config.body.after-4,config.body.after-4,config.body.after-4];
   for(let i=1;i<=6;i++){const headingSize=headingSizes[i-1];const line=card?headingSize*1.5:mobile?headingSize*1.5:headingSize*1.5;config['h'+i]=text(headingSize,line,i<=4?600:500);config['h'+i].before=Math.max(0,headingBefore[i-1]);config['h'+i].after=Math.max(0,headingAfter[i-1]);}
-  config.ol=text(size,card?24:size*1.7);config.ul=text(size,card?24:size*1.7);
-  config.quote=text(size,card?24:size*1.7);config.quote.color='#657084';config.quote.before=card?8:mobile?10:12;config.quote.after=card?8:mobile?10:12;
-  config.code=text(13,17,400,16,'mono');config.code.before=card?8:mobile?10:12;config.code.after=card?8:mobile?10:12;
-  config.table=text(size,card?24:size*1.7,400,16);config.table.before=card?8:mobile?10:12;config.table.after=card?8:mobile?10:12;
+  config.ol=text(size,card?24:size*1.7);config.ul=text(size,card?24:size*1.7);config.ol.after=config.body.after;config.ul.after=config.body.after;
+  config.quote=text(size,card?24:size*1.7);config.quote.color='#657084';config.quote.before=card?8:mobile?10:12;config.quote.after=config.body.after+4;
+  config.code=text(13,17,400,16,'mono');config.code.before=card?8:mobile?10:12;config.code.after=config.body.after+4;
+  config.table=text(size,card?24:size*1.7,400,16);config.table.before=card?8:mobile?10:12;config.table.after=config.body.after+4;
   config.thead=text(size,card?24:size*1.7,600,0);
-  config.image=text(size,card?24:size*1.7,400,card?8:mobile?10:12);config.image.before=card?8:mobile?10:12;
+  config.image=text(size,card?24:size*1.7,400);config.image.before=card?8:mobile?10:12;config.image.after=config.body.after+4;
   config.hr={before:gap,after:gap};
   config.mark={background:'#dcd7ff',color:'#37383c',styleVersion:2};
   config.highlight={background:'#efecff',color:'#37383c'};
