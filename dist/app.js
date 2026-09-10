@@ -1,4 +1,4 @@
-import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample} from './model.js';
+import {labels,fonts,preset,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js';
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
@@ -17,6 +17,7 @@ try {const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved){if(saved.de
 for(const s of Object.keys(scenes))applyCardSpacing(applyLineRhythm(applyHeadingRhythm(configs[s]),s),s);
 const shared=decodeShared(new URLSearchParams(location.search).get('share')||'');if(shared?.configs){for(const s of Object.keys(scenes))configs[s]=applyCardSpacing(applyLineRhythm(applyHeadingRhythm(normalize(shared.configs[s],s)),s),s);if(typeof shared.source==='string')source=shared.source;activeVersion='';}
 const current=()=>configs[scene];
+let compare=false,dragging=false;
 const refreshGaps=installGapOverlay({frame:$('frame'),answer:$('answer'),toggle:$('measure'),getConfig:current});
 function notify(text){$('notice').textContent=text;$('notice').classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').classList.remove('show'),2600);}
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify({defaultConfigVersion:DEFAULT_CONFIG_VERSION,scene,configs,source:$('source').value,versions,activeVersion}));}catch{if(!storageWarned){notify('浏览器未能保存参数，本次编辑仍可继续。');storageWarned=true;}}}
@@ -47,8 +48,10 @@ function renderControls(preserve=true){
   html+=section('highlight','Highlight · 高亮',colorField('高亮底色','highlight.background',c.highlight.background)+colorField('文字颜色','highlight.color',c.highlight.color)+`<p class="hint">&lt;highlight&gt;高亮强调&lt;/highlight&gt;：浅紫色整块底色，保留文字原有字重。</p>`,preserve?open.has('highlight'):true)+section('mark','Mark · 标记',colorField('底部标记颜色','mark.background',c.mark.background)+colorField('文字颜色','mark.color',c.mark.color)+`<p class="hint">&lt;mark&gt;这是标记内容&lt;/mark&gt;：加粗文字，底部紫色标记，支持跨行。</p>`,preserve?open.has('mark'):true);
   $('controls').innerHTML=html;
 }
-function renderStyle(){const c=current(),css=buildCSS(c);$('live-css').textContent=css;const preview=$('css-preview'),top=preview.scrollTop,left=preview.scrollLeft;preview.value=css;preview.scrollTop=top;preview.scrollLeft=left;$('css-hint').textContent=`${scenes[scene]} · 随参数实时更新 · 作用于 .markdown-body`;$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;refreshGaps();}
-function renderContent(){const text=$('source').value;$('char-count').textContent=`${text.length.toLocaleString()} 字符`;try{$('answer').innerHTML=renderMarkdown(text);}catch{$('answer').textContent='这段内容暂时无法解析，请检查 Markdown 格式。';}refreshGaps();}
+function renderStyle(){const c=current(),css=buildCSS(c);$('live-css').textContent=css;const preview=$('css-preview'),top=preview.scrollTop,left=preview.scrollLeft;preview.value=css;preview.scrollTop=top;preview.scrollLeft=left;$('frame').dataset.scene=scene;$('frame').style.maxWidth=c.width+'px';$('frame').style.paddingInline=c.padding+'px';$('scene-status').textContent=`${scenes[scene]} · ${c.width} px`;let legacy=document.getElementById('legacy-css');if(!legacy){legacy=document.createElement('style');legacy.id='legacy-css';document.head.appendChild(legacy);}legacy.textContent=buildLegacyCSS(scene);updateCompare();refreshGaps();}
+function renderContent(){const text=$('source').value;$('char-count').textContent=`${text.length.toLocaleString()} 字符`;try{$('answer').innerHTML=renderMarkdown(text);$('answer-legacy').innerHTML=renderMarkdown(text);}catch{$('answer').textContent='这段内容暂时无法解析，请检查 Markdown 格式。';$('answer-legacy').textContent=$('answer').textContent;}refreshGaps();}
+function updateCompare(){const divider=$('compare-divider'),old=$('answer-legacy'),fresh=$('answer');if(!compare){$('frame').classList.remove('is-comparing');divider.style.left='50%';return;}$('frame').classList.add('is-comparing');divider.style.left=(divider.dataset.position||'50')+'%';fresh.style.clipPath=`inset(0 0 0 ${divider.dataset.position||50}%)`;old.style.clipPath=`inset(0 ${100-(Number(divider.dataset.position||50))}% 0 0)`;}
+function setComparePosition(x){const r=$('frame').getBoundingClientRect();const p=Math.max(5,Math.min(95,((x-r.left)/r.width)*100));$('compare-divider').dataset.position=p.toFixed(2);updateCompare();}
 $('controls').addEventListener('input',event=>{
   const el=event.target,key=el.dataset.key;if(!key||el.tagName==='SELECT')return;
   const parts=key.split('.'),target=parts.length===2?current()[parts[0]]:current(),prop=parts.at(-1);
@@ -79,7 +82,13 @@ $('share-version').addEventListener('click',shareVersion);
 $('delete-version').addEventListener('click',()=>{if(!activeVersion)return notify('当前还没有选中的保存版本。');const v=versions.find(item=>item.id===activeVersion);if(!confirm(`删除版本「${v?.name||''}」？`))return;versions=versions.filter(item=>item.id!==activeVersion);activeVersion='';renderVersions();persist();notify('已删除保存版本。');});
 $('source').value=source;$('source').addEventListener('input',()=>{renderContent();save();});
 $('measure').addEventListener('change',()=>$('answer').classList.toggle('measuring',$('measure').checked));
+$('compare-toggle').addEventListener('change',e=>{compare=e.target.checked;updateCompare();});
+$('compare-divider').addEventListener('pointerdown',e=>{if(!compare)return;dragging=true;$('compare-divider').setPointerCapture(e.pointerId);});
+$('compare-divider').addEventListener('pointermove',e=>{if(dragging)setComparePosition(e.clientX);});
+$('compare-divider').addEventListener('pointerup',()=>{dragging=false;});
+$('compare-divider').addEventListener('pointercancel',()=>{dragging=false;});
 $('reset').addEventListener('click',()=>{configs[scene]=preset(scene);renderControls();renderStyle();save();notify('已重置当前场景，Markdown 内容保持不变。');});
 $('copy-css').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('css-preview').value);notify('已复制当前场景的 CSS。');}catch{$('css-preview').focus();$('css-preview').select();notify('已选中完整 CSS，请按 Ctrl+C 或 ⌘C 复制。');}});
 $('export').addEventListener('click',()=>{const blob=new Blob([buildCSS(current())],{type:'text/css;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`ai-answer-${scene}.css`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify('当前场景的样式已导出。');});
 renderVersions();renderControls(false);renderStyle();renderContent();
+document.querySelectorAll('.content-tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.content-tab').forEach(t=>t.classList.toggle('active',t===tab));document.querySelectorAll('.tab-view').forEach(v=>v.classList.toggle('active',v.dataset.view===tab.dataset.tab));}));
