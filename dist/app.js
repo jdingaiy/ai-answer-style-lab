@@ -2,14 +2,14 @@ import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample}
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
-const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-list-marker-align-v11';
+const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-list-indent-v12';
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
 let scene='web';
 let source=defaultSnapshot.source||sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
 let configs=Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(defaultSnapshot.configs?.[s],s)]));
 function applyHeadingRhythm(c){const bodySize=c.body.size,bodyAfter=c.body.after,divider=c.hr.before,lineMultiplier=c.width<=420&&c.width>=380?1.6:1.7;c.body.line=lineMultiplier;c.body.unit='multiplier';const sizes=[bodySize+5,bodySize+3,bodySize+1,bodySize,bodySize,bodySize];const before=[divider,divider-4,divider-6,divider-8,divider-8,divider-8];const after=[bodyAfter+2,bodyAfter,bodyAfter-2,bodyAfter-4,bodyAfter-4,bodyAfter-4];for(let i=1;i<=6;i++){const h=c['h'+i];h.size=sizes[i-1];h.before=Math.max(0,before[i-1]);h.after=Math.max(0,after[i-1]);h.line=lineMultiplier;h.unit='multiplier';}for(const key of ['ol','ul','table','thead']){c[key].line=lineMultiplier;c[key].unit='multiplier';}c.ol.after=bodyAfter;c.ul.after=bodyAfter;for(const key of ['quote','code','table','image'])c[key].after=bodyAfter+4;return c;}
 function applyLineRhythm(c,sceneName){const lineMultiplier=sceneName==='card'?1.6:1.7;c.body.line=lineMultiplier;c.body.unit='multiplier';for(const key of ['h1','h2','h3','h4','h5','h6','ol','ul','table','thead']){c[key].line=lineMultiplier;c[key].unit='multiplier';}return c;}
-function applyCardSpacing(c,sceneName){c.indent=16;if(sceneName!=='card')return c;c.hr.before=16;c.hr.after=16;c.body.after=6;return applyLineRhythm(applyHeadingRhythm(c),sceneName);}
+function applyCardSpacing(c,sceneName){c.indent=25;if(sceneName!=='card')return c;c.hr.before=16;c.hr.after=16;c.body.after=6;return applyLineRhythm(applyHeadingRhythm(c),sceneName);}
 for(const s of Object.keys(scenes))applyCardSpacing(applyLineRhythm(applyHeadingRhythm(configs[s]),s),s);
 function decodeShared(raw){try{const text=decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/'))));return JSON.parse(text);}catch{return null;}}
 function encodeShared(value){const bytes=new TextEncoder().encode(JSON.stringify(value));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
@@ -38,7 +38,7 @@ function renderControls(preserve=true){
   for(const [key,label] of Object.entries(labels)){
     let fields=key==='hr'?'':textFields(key,c[key]);
     if(key!=='thead')fields+=spacingFields(key,c[key]);
-    if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表左缩进','indent',c.indent,{min:16,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">仅同步外部间距，不改文字样式。</p>`;
+    if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表左缩进','indent',c.indent,{min:25,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">有序列表和无序列表统一使用此缩进值。</p>`;
   if(key==='ul')fields+=`<p class="hint">列表项间距与左缩进沿用有序列表设置。</p>`;
     if(key==='ul')fields+=numberField('圆点与文字间距','markerGap',c.markerGap,{max:32})+numberField('圆点大小','markerSize',c.markerSize,{min:2,max:24})+colorField('圆点颜色','markerColor',c.markerColor)+`<p class="hint">仅调整无序列表圆点与文字的距离、大小及颜色。</p>`;
     if(key==='table')fields+=numberField('单元格内边距','cellPadding',c.cellPadding,{max:40})+numberField('列内容最小宽度','columnMin',c.columnMin,{min:40,max:400})+numberField('列内容最大宽度','columnMax',c.columnMax,{min:80,max:600})+`<p class="hint">短内容按需占宽，长内容达到上限后换行；表格总宽超出时左右滑动。列宽另加两侧内边距。</p>`;
