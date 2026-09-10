@@ -8,7 +8,7 @@ export function preset(scene='web') {
   const mobile=scene==='app',card=scene==='card';
   const gap=card?16:mobile?12:16, size=mobile?17:15;
   const text=(size,line,weight=400,after=gap,font='system')=>({size,line,unit:'px',weight,color:'#242a33',font,before:0,after});
-  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:16,markerGap:4,markerSize:6,markerColor:'#242a33',cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,ruleColor:'#e2e5eb',ruleWidth:1};
+  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:25,markerGap:4,markerSize:6,markerColor:'#242a33',cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,ruleColor:'#e2e5eb',ruleWidth:1};
   const lineMultiplier=card?1.6:1.7;
   config.body=text(size,lineMultiplier);config.body.unit='multiplier';if(card)config.body.after=6;
   const headingSizes=[size+5,size+3,size+1,size,size,size];
@@ -39,7 +39,7 @@ export function normalize(raw,scene) {
     if(/^#[0-9a-f]{6}$/i.test(r.color))c[k].color=r.color;
     if(Object.hasOwn(fonts,r.font))c[k].font=r.font;
   }
-  for(const [key,min,max] of [['width',280,1200],['padding',0,80],['tight',0,80],['itemGap',0,80],['indent',16,80],['cellPadding',0,40],['ruleWidth',1,8]])c[key]=clamp(raw[key],min,max,c[key]);
+  for(const [key,min,max] of [['width',280,1200],['padding',0,80],['tight',0,80],['itemGap',0,80],['indent',25,80],['cellPadding',0,40],['ruleWidth',1,8]])c[key]=clamp(raw[key],min,max,c[key]);
   c.columnMin=clamp(raw.columnMin,40,400,c.columnMin);
   c.columnMax=Math.max(c.columnMin,clamp(raw.columnMax,80,600,c.columnMax));
   c.markerGap=clamp(raw.markerGap,0,32,c.markerGap);
