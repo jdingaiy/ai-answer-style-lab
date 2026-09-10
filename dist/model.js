@@ -16,11 +16,11 @@ export function preset(scene='web') {
   const headingAfter=[config.body.after+2,config.body.after,config.body.after-2,config.body.after-4,config.body.after-4,config.body.after-4];
   for(let i=1;i<=6;i++){const headingSize=headingSizes[i-1];config['h'+i]=text(headingSize,lineMultiplier,i<=4?600:500);config['h'+i].unit='multiplier';config['h'+i].before=Math.max(0,headingBefore[i-1]);config['h'+i].after=Math.max(0,headingAfter[i-1]);}
   config.ol=text(size,lineMultiplier);config.ol.unit='multiplier';config.ul=text(size,lineMultiplier);config.ul.unit='multiplier';config.ol.after=config.body.after;config.ul.after=config.body.after;
-  config.quote=text(size,card?24:size*1.7);config.quote.color='#657084';config.quote.before=card?8:mobile?10:12;config.quote.after=config.body.after+4;
-  config.code=text(13,17,400,16,'mono');config.code.before=card?8:mobile?10:12;config.code.after=config.body.after+4;
-  config.table=text(size,lineMultiplier,400,16);config.table.unit='multiplier';config.table.before=card?8:mobile?10:12;config.table.after=config.body.after+4;
+  config.quote=text(card||mobile?15:13,card||mobile?24:18,400,10);config.quote.color='#657084';config.quote.unit='px';config.quote.before=10;config.quote.after=10;
+  config.code=text(13,17,400,16,'mono');config.code.before=config.body.after+4;config.code.after=config.body.after+4;
+  config.table=text(size,lineMultiplier,400,16);config.table.unit='multiplier';config.table.before=config.body.after+4;config.table.after=config.body.after+4;
   config.thead=text(size,lineMultiplier,600,0);config.thead.unit='multiplier';
-  config.image=text(size,card?24:size*1.7,400);config.image.before=card?8:mobile?10:12;config.image.after=config.body.after+4;
+  config.image=text(size,card?24:size*1.7,400);config.image.before=config.body.after+4;config.image.after=config.body.after+4;
   config.hr={before:gap,after:gap};
   config.mark={background:'#dcd7ff',color:'#37383c',styleVersion:2};
   config.highlight={background:'#efecff',color:'#37383c'};
