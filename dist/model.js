@@ -81,6 +81,11 @@ export function buildCSS(c) {
   css+=`.markdown-body .md-cell{box-sizing:content-box;width:max-content;min-width:${c.columnMin}px;max-width:${Math.max(c.columnMin,c.columnMax)}px;white-space:normal;overflow-wrap:anywhere;word-break:normal;}\n`;
   return css;
 }
+export function buildLegacyCSS(scene='web') {
+  const card=scene==='card', app=scene==='app';
+  const size=card?15:app?17:15, line=card?'24px':'27px', color=card?'#242a33':'#5f6b80', gap=card?8:app?12:16;
+  return `.legacy-layer{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",Arial,sans-serif!important;font-size:${size}px!important;line-height:${line}!important;color:${color}!important;} .legacy-layer p{margin:0 0 ${gap}px!important;} .legacy-layer h1,.legacy-layer h2{font-size:${card?16:18}px!important;line-height:${line}!important;font-weight:${card?600:700}!important;margin:0 0 ${gap}px!important;} .legacy-layer h3{font-size:${card?15:app?17:16}px!important;line-height:${line}!important;font-weight:700!important;margin:0 0 ${gap}px!important;} .legacy-layer h4,.legacy-layer h5,.legacy-layer h6{font-size:${card?15:app?17:16}px!important;line-height:${line}!important;font-weight:500!important;margin:0 0 ${gap}px!important;} .legacy-layer :where(ol,ul){padding-inline-start:25px!important;margin:0 0 ${gap}px!important;} .legacy-layer li{margin-top:4px!important;} .legacy-layer li:first-child{margin-top:0!important;} .legacy-layer blockquote{margin:0 0 ${gap}px!important;padding-left:16px!important;border-left:3px solid #e2e5eb!important;color:inherit!important;} .legacy-layer pre,.legacy-layer .md-table,.legacy-layer figure.md-image{margin:0 0 16px!important;} .legacy-layer pre{font-size:13px!important;line-height:17px!important;} .legacy-layer .md-table{overflow:auto!important;} .legacy-layer img{max-width:100%!important;height:auto!important;border-radius:8px!important;} .legacy-layer hr{margin:0 0 ${gap}px!important;border:0!important;height:1px!important;background:#e2e5eb!important;}`;
+}
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function safeURL(href) {
   // Only explicit HTTP(S), mailto and fragment links; reject encoded schemes.
