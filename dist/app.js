@@ -2,7 +2,7 @@ import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample}
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
-const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-list-marker-v9';
+const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-list-marker-size-v10';
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
 let scene='web';
 let source=defaultSnapshot.source||sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
@@ -40,7 +40,7 @@ function renderControls(preserve=true){
     if(key!=='thead')fields+=spacingFields(key,c[key]);
     if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表左缩进','indent',c.indent,{min:16,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">仅同步外部间距，不改文字样式。</p>`;
   if(key==='ul')fields+=`<p class="hint">列表项间距与左缩进沿用有序列表设置。</p>`;
-    if(key==='ul')fields+=numberField('圆点与文字间距','markerGap',c.markerGap,{max:32})+colorField('圆点颜色','markerColor',c.markerColor)+`<p class="hint">仅调整无序列表圆点与文字的距离及颜色。</p>`;
+    if(key==='ul')fields+=numberField('圆点与文字间距','markerGap',c.markerGap,{max:32})+numberField('圆点大小','markerSize',c.markerSize,{min:2,max:24})+colorField('圆点颜色','markerColor',c.markerColor)+`<p class="hint">仅调整无序列表圆点与文字的距离、大小及颜色。</p>`;
     if(key==='table')fields+=numberField('单元格内边距','cellPadding',c.cellPadding,{max:40})+numberField('列内容最小宽度','columnMin',c.columnMin,{min:40,max:400})+numberField('列内容最大宽度','columnMax',c.columnMax,{min:80,max:600})+`<p class="hint">短内容按需占宽，长内容达到上限后换行；表格总宽超出时左右滑动。列宽另加两侧内边距。</p>`;
     if(key==='hr')fields+=numberField('线条粗细','ruleWidth',c.ruleWidth,{min:1,max:8})+colorField('线条颜色','ruleColor',c.ruleColor)+`<p class="hint">上下两侧分别参与相邻间距计算，分割线本身不再附带默认 margin。</p>`;
     html+=section(key,label,fields,preserve?open.has(key):['body','h1','h2'].includes(key));
