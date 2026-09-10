@@ -2,7 +2,7 @@ import {labels,fonts,preset,normalize,switchUnit,buildCSS,renderMarkdown,sample}
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
-const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-native-list-marker-v14';
+const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-list-indent-control-v15';
 const scenes={web:'Web · AI 搜索',app:'App · AI 搜索',card:'App · 搜索卡片'};
 let scene='web';
 let source=defaultSnapshot.source||sample,saveTimer,noticeTimer,storageWarned=false,versions=[],activeVersion='';
@@ -38,7 +38,7 @@ function renderControls(preserve=true){
   for(const [key,label] of Object.entries(labels)){
     let fields=key==='hr'?'':textFields(key,c[key]);
     if(key!=='thead')fields+=spacingFields(key,c[key]);
-    if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表左缩进','indent',c.indent,{min:25,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">有序列表和无序列表统一使用此缩进值。</p>`;
+    if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表整体缩进','indent',c.indent,{min:0,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">默认 25px，同时作用于有序列表和无序列表。</p>`;
     if(key==='ul')fields+=`<p class="hint">圆点使用浏览器原生列表样式；列表项间距与左缩进沿用有序列表设置。</p>`;
     if(key==='table')fields+=numberField('单元格内边距','cellPadding',c.cellPadding,{max:40})+numberField('列内容最小宽度','columnMin',c.columnMin,{min:40,max:400})+numberField('列内容最大宽度','columnMax',c.columnMax,{min:80,max:600})+`<p class="hint">短内容按需占宽，长内容达到上限后换行；表格总宽超出时左右滑动。列宽另加两侧内边距。</p>`;
     if(key==='hr')fields+=numberField('线条粗细','ruleWidth',c.ruleWidth,{min:1,max:8})+colorField('线条颜色','ruleColor',c.ruleColor)+`<p class="hint">上下两侧分别参与相邻间距计算，分割线本身不再附带默认 margin。</p>`;
