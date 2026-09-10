@@ -8,7 +8,7 @@ export function preset(scene='web') {
   const mobile=scene==='app',card=scene==='card';
   const gap=card?16:mobile?12:16, size=mobile?17:15;
   const text=(size,line,weight=400,after=gap,font='system')=>({size,line,unit:'px',weight,color:'#242a33',font,before:0,after});
-  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:16,markerGap:4,markerColor:'#242a33',cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,ruleColor:'#e2e5eb',ruleWidth:1};
+  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:16,markerGap:4,markerSize:6,markerColor:'#242a33',cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,ruleColor:'#e2e5eb',ruleWidth:1};
   const lineMultiplier=card?1.6:1.7;
   config.body=text(size,lineMultiplier);config.body.unit='multiplier';if(card)config.body.after=6;
   const headingSizes=[size+5,size+3,size+1,size,size,size];
@@ -43,6 +43,7 @@ export function normalize(raw,scene) {
   c.columnMin=clamp(raw.columnMin,40,400,c.columnMin);
   c.columnMax=Math.max(c.columnMin,clamp(raw.columnMax,80,600,c.columnMax));
   c.markerGap=clamp(raw.markerGap,0,32,c.markerGap);
+  c.markerSize=clamp(raw.markerSize,2,24,c.markerSize);
   if(/^#[0-9a-f]{6}$/i.test(raw.markerColor))c.markerColor=raw.markerColor;
   c.tightTitles=raw.tightTitles===true;
   if(/^#[0-9a-f]{6}$/i.test(raw.ruleColor))c.ruleColor=raw.ruleColor;
@@ -78,7 +79,7 @@ export function buildCSS(c) {
   for(const [a,sa] of Object.entries(selectors))for(const [b,sb] of Object.entries(selectors))css+=`.markdown-body ${sa} + ${sb}{margin-block-start:${blockGap(c,a,b)}px;}\n`;
   css+=`.markdown-body figure.md-image{display:block;max-width:100%;}.markdown-body figure.md-image img{display:block;max-width:100%;height:auto;margin:0;}\n`;
   css+=`.markdown-body .md-table > table{min-width:100%;}\n`;
-  css+=`.markdown-body ul li{position:relative;list-style:none;}.markdown-body ul li::before{content:'•';position:absolute;right:calc(100% + ${c.markerGap}px);color:${c.markerColor};}\n`;
+  css+=`.markdown-body ul li{position:relative;list-style:none;}.markdown-body ul li::before{content:'•';position:absolute;right:calc(100% + ${c.markerGap}px);font-size:${c.markerSize}px;line-height:1;color:${c.markerColor};}\n`;
   css+=`.markdown-body > :first-child,.markdown-body :where(li,blockquote) > :first-child{margin-block-start:0;}\n.markdown-body :where(ol,ul){padding-inline-start:${c.indent}px;}\n.markdown-body li + li{margin-block-start:${c.itemGap}px;}\n.markdown-body li > p,.markdown-body blockquote > p{font:inherit;color:inherit;}\n.markdown-body li > :last-child,.markdown-body blockquote > :last-child{margin-block-end:0;}\n.markdown-body blockquote{border-left:3px solid #dce1e9;padding:2px 0 2px 16px;display:flow-root;}\n.markdown-body pre{padding:16px;background:#f6f7f9;border:1px solid #e6e9ee;border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.markdown-body pre code{font:inherit;color:inherit;background:none;padding:0;}\n.markdown-body :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:#f1f3f6;border-radius:4px;padding:2px 5px;}\n.markdown-body .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid #e3e7ed;border-radius:8px;}\n.markdown-body table{width:max-content;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.markdown-body td,.markdown-body th{padding:${c.cellPadding}px;white-space:normal;border-bottom:1px solid #e3e7ed;border-right:1px solid #e3e7ed;vertical-align:top;text-align:left;}\n.markdown-body td{${typography(c.table)}}\n.markdown-body th{${typography(c.thead)}background:#f5f7fa;}\n.markdown-body tr > :last-child{border-right:0;}\n.markdown-body tbody tr:last-child td{border-bottom:0;}\n.markdown-body hr{border:0;height:${c.ruleWidth}px;background:${c.ruleColor};padding:0;}\n.markdown-body a{color:#2168ee;text-decoration:none;}\n.markdown-body a:hover{text-decoration:underline;}\n.markdown-body strong{font-weight:700;}\n.markdown-body img{max-width:100%;height:auto;}\n.markdown-body input[type=checkbox]{margin-inline-end:6px;}\n`;
   css+=`.markdown-body mark{background-color:transparent;background-image:linear-gradient(${c.mark.background},${c.mark.background});background-repeat:no-repeat;background-position:0 95%;background-size:100% .5em;color:${c.mark.color};font-weight:700;padding:0;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n.markdown-body highlight{display:inline;background-color:${c.highlight.background};color:${c.highlight.color};font-weight:inherit;padding:.06em .04em;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
   css+=`.markdown-body .md-cell{box-sizing:content-box;width:max-content;min-width:${c.columnMin}px;max-width:${Math.max(c.columnMin,c.columnMax)}px;white-space:normal;overflow-wrap:anywhere;word-break:normal;}\n`;
