@@ -39,7 +39,7 @@ export function normalize(raw,scene) {
     if(/^#[0-9a-f]{6}$/i.test(r.color))c[k].color=r.color;
     if(Object.hasOwn(fonts,r.font))c[k].font=r.font;
   }
-  for(const [key,min,max] of [['width',280,1200],['padding',0,80],['tight',0,80],['itemGap',0,80],['indent',25,80],['cellPadding',0,40],['ruleWidth',1,8]])c[key]=clamp(raw[key],min,max,c[key]);
+  for(const [key,min,max] of [['width',280,1200],['padding',0,80],['tight',0,80],['itemGap',0,80],['indent',0,80],['cellPadding',0,40],['ruleWidth',1,8]])c[key]=clamp(raw[key],min,max,c[key]);
   c.columnMin=clamp(raw.columnMin,40,400,c.columnMin);
   c.columnMax=Math.max(c.columnMin,clamp(raw.columnMax,80,600,c.columnMax));
   c.tightTitles=raw.tightTitles===true;
