@@ -1,4 +1,4 @@
-import {labels,fonts,preset,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js';
+import {labels,fonts,preset,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20260911-image-row-v3';
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 const $=id=>document.getElementById(id);
