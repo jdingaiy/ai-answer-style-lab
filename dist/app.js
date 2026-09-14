@@ -1,4 +1,4 @@
-import {labels,fonts,preset,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20260911-image-radius-v1';
+import {labels,fonts,preset,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20260914-image-grid-v1';
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 import {buildFigmaScripterScript} from './figma-export.js?v=20260911-figma-export-v1';
@@ -50,6 +50,7 @@ function renderControls(preserve=true){
     if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表整体缩进','indent',c.indent,{min:0,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">默认 25px，同时作用于有序列表和无序列表。</p>`;
     if(key==='ul')fields+=`<p class="hint">圆点使用浏览器原生列表样式；列表项间距与左缩进沿用有序列表设置。</p>`;
     if(key==='table')fields+=numberField('单元格内边距','cellPadding',c.cellPadding,{max:40})+numberField('列内容最小宽度','columnMin',c.columnMin,{min:40,max:400})+numberField('列内容最大宽度','columnMax',c.columnMax,{min:80,max:600})+`<p class="hint">短内容按需占宽，长内容达到上限后换行；表格总宽超出时左右滑动。列宽另加两侧内边距。</p>`;
+    if(key==='image')fields+=numberField('图片间隙','image.gap',c.image.gap,{min:0,max:40})+`<p class="hint">每组最多 3 张；每张按三列等分内容宽度，保持 1:1 裁切。列表中的图片与列表文字左侧对齐。</p>`;
     if(key==='hr')fields+=numberField('线条粗细','ruleWidth',c.ruleWidth,{min:1,max:8})+colorField('线条颜色','ruleColor',c.ruleColor)+`<p class="hint">上下两侧分别参与相邻间距计算，分割线本身不再附带默认 margin。</p>`;
     html+=section(key,label,fields,preserve?open.has(key):['body','h1','h2'].includes(key));
   }
