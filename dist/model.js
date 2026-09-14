@@ -20,7 +20,7 @@ export function preset(scene='web') {
   config.code=text(13,17,400,16,'mono');config.code.before=config.body.after+4;config.code.after=config.body.after+4;
   config.table=text(size,lineMultiplier,400,16);config.table.unit='multiplier';config.table.before=config.body.after+4;config.table.after=config.body.after+4;
   config.thead=text(size,lineMultiplier,600,0);config.thead.unit='multiplier';
-  config.image=text(size,card?24:size*1.7,400);config.image.before=config.body.after+4;config.image.after=config.body.after+4;
+  config.image=text(size,card?24:size*1.7,400);config.image.before=config.body.after+4;config.image.after=config.body.after+4;config.image.gap=8;
   config.hr={before:gap,after:gap};
   config.mark={background:'#dcd7ff',color:'#37383c',styleVersion:2};
   config.highlight={background:'#efecff',color:'#37383c'};
@@ -42,6 +42,7 @@ export function normalize(raw,scene) {
   for(const [key,min,max] of [['width',280,1200],['padding',0,80],['tight',0,80],['itemGap',0,80],['indent',0,80],['cellPadding',0,40],['ruleWidth',1,8]])c[key]=clamp(raw[key],min,max,c[key]);
   c.columnMin=clamp(raw.columnMin,40,400,c.columnMin);
   c.columnMax=Math.max(c.columnMin,clamp(raw.columnMax,80,600,c.columnMax));
+  c.image.gap=clamp(raw.image?.gap,0,40,c.image.gap);
   c.tightTitles=raw.tightTitles===true;
   if(/^#[0-9a-f]{6}$/i.test(raw.ruleColor))c.ruleColor=raw.ruleColor;
   for(const tag of ['mark','highlight'])for(const key of ['background','color']){
@@ -74,7 +75,8 @@ export function buildCSS(c) {
     css+=`.markdown-body ${selector}{margin-block-start:${c[k].before}px;}\n`;
   }
   for(const [a,sa] of Object.entries(selectors))for(const [b,sb] of Object.entries(selectors))css+=`.markdown-body ${sa} + ${sb}{margin-block-start:${blockGap(c,a,b)}px;}\n`;
-  css+=`.markdown-body figure.md-image{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:8px;width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}\n.markdown-body figure.md-image img{display:block;flex:0 0 98px;width:98px;height:98px;max-width:none;margin:0;border-radius:4px;object-fit:cover;}\n.markdown-body li > figure.md-image{width:100%;max-width:100%;margin-inline:0;padding-inline:0;}\n`;
+  const imageWidth=`calc((100% - ${c.image.gap*2}px) / 3)`;
+  css+=`.markdown-body figure.md-image{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:${c.image.gap}px;width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}\n.markdown-body figure.md-image img{display:block;flex:0 0 ${imageWidth};width:${imageWidth};aspect-ratio:1 / 1;height:auto;max-width:none;margin:0;border-radius:4px;object-fit:cover;}\n.markdown-body li > figure.md-image{width:100%;max-width:100%;margin-inline:0;padding-inline:0;}\n`;
   css+=`.markdown-body .md-table > table{min-width:100%;}\n`;
   css+=`.markdown-body > :first-child,.markdown-body :where(li,blockquote) > :first-child{margin-block-start:0;}\n.markdown-body :where(ol,ul){padding-inline-start:${c.indent}px;}\n.markdown-body li + li{margin-block-start:${c.itemGap}px;}\n.markdown-body li > p,.markdown-body blockquote > p{font:inherit;color:inherit;}\n.markdown-body li > :last-child,.markdown-body blockquote > :last-child{margin-block-end:0;}\n.markdown-body blockquote{border-left:3px solid #dce1e9;padding:2px 0 2px 16px;display:flow-root;}\n.markdown-body pre{padding:16px;background:#f6f7f9;border:1px solid #e6e9ee;border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.markdown-body pre code{font:inherit;color:inherit;background:none;padding:0;}\n.markdown-body :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:#f1f3f6;border-radius:4px;padding:2px 5px;}\n.markdown-body .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid #e3e7ed;border-radius:8px;}\n.markdown-body table{width:max-content;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.markdown-body td,.markdown-body th{padding:${c.cellPadding}px;white-space:normal;border-bottom:1px solid #e3e7ed;border-right:1px solid #e3e7ed;vertical-align:top;text-align:left;}\n.markdown-body td{${typography(c.table)}}\n.markdown-body th{${typography(c.thead)}background:#f5f7fa;}\n.markdown-body tr > :last-child{border-right:0;}\n.markdown-body tbody tr:last-child td{border-bottom:0;}\n.markdown-body hr{border:0;height:${c.ruleWidth}px;background:${c.ruleColor};padding:0;}\n.markdown-body a{color:#2168ee;text-decoration:none;}\n.markdown-body a:hover{text-decoration:underline;}\n.markdown-body strong{font-weight:700;}\n.markdown-body img{max-width:100%;height:auto;}\n.markdown-body input[type=checkbox]{margin-inline-end:6px;}\n`;
   css+=`.markdown-body mark{background-color:transparent;background-image:linear-gradient(${c.mark.background},${c.mark.background});background-repeat:no-repeat;background-position:0 95%;background-size:100% .5em;color:${c.mark.color};font-weight:700;padding:0;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n.markdown-body highlight{display:inline;background-color:${c.highlight.background};color:${c.highlight.color};font-weight:inherit;padding:.06em .04em;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
@@ -92,7 +94,9 @@ export function safeURL(href) {
   if(!/^(https?:\/\/|mailto:|#)/i.test(href))return '';
   return escapeHTML(href);
 }
-const wrapListImageRows=html=>html.replace(/(^|\n)[ \t]*((?:<img\b[^>]*>[ \t]*(?:\n[ \t]*)?)+)/g,(match,prefix,images)=>`${prefix}<figure class="md-image${(images.match(/<img\b/gi)||[]).length>1?' md-image-group':''}">${images.trim()}</figure>`);
+const imageTags=html=>String(html).match(/<img\b[^>]*>/gi)||[];
+const imageGroups=images=>{const groups=[];for(let i=0;i<images.length;i+=3){const chunk=images.slice(i,i+3);groups.push(`<figure class="md-image${chunk.length>1?' md-image-group':''}">${chunk.join('')}</figure>`);}return groups.join('');};
+const wrapListImageRows=html=>html.replace(/(^|\n)[ \t]*((?:<img\b[^>]*>[ \t]*(?:\n[ \t]*)?)+)/g,(match,prefix,images)=>`${prefix}${imageGroups(imageTags(images))}`);
 const parser=new Marked({gfm:true,breaks:false,renderer:{
   html({text}){
     // Allow only the inert mark element; never forward user-supplied attributes.
@@ -105,11 +109,11 @@ const parser=new Marked({gfm:true,breaks:false,renderer:{
   },
   link({href,tokens}){const label=this.parser.parseInline(tokens);const url=safeURL(href);return url?`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`:label;},
   listitem(item){return `<li>${wrapListImageRows(this.parser.parse(item.tokens))}</li>\n`;},
-  paragraph({tokens}){const text=this.parser.parseInline(tokens);const value=String(text||'').trim();const images=value.match(/<img\b[^>]*>/gi)||[];if(images.length && value.replace(/<img\b[^>]*>/gi,'').trim()==='')return `<figure class="md-image${images.length>1?' md-image-group':''}">${images.join('')}</figure>`;return `<p>${text}</p>`;},
+  paragraph({tokens}){const text=this.parser.parseInline(tokens);const value=String(text||'').trim();const images=imageTags(value);if(images.length && value.replace(/<img\b[^>]*>/gi,'').trim()==='')return imageGroups(images);return `<p>${text}</p>`;},
   image({href,text,title}){const url=safeURL(href);if(!url)return `[图片：${escapeHTML(text)}]`;const label=escapeHTML(text||'');const titleAttr=title?` title="${escapeHTML(title)}"`:'';return `<img src="${url}" alt="${label}" loading="lazy" decoding="async"${titleAttr}>`;},
   table(token){let header='',body='';const renderCell=cell=>this.tablecell(cell).replace(/^(<(?:th|td)[^>]*>)([\s\S]*)(<\/(?:th|td)>)/, '$1<div class="md-cell">$2</div>$3');for(const cell of token.header)header+=renderCell(cell);for(const row of token.rows){let cells='';for(const cell of row)cells+=renderCell(cell);body+=`<tr>${cells}</tr>`;}return `<div class="md-table" tabindex="0" role="region" aria-label="表格，可左右滚动"><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></div>`;}
 }});
-export function renderMarkdown(source){let html=parser.parse(source),previous='';while(previous!==html){previous=html;html=html.replace(/<figure class="md-image(?: md-image-group)?">([\s\S]*?)<\/figure>\s*<figure class="md-image(?: md-image-group)?">([\s\S]*?)<\/figure>/g,'<figure class="md-image md-image-group">$1$2</figure>');}return html;}
+export function renderMarkdown(source){let html=parser.parse(source);return html.replace(/(?:<figure class="md-image(?: md-image-group)?">[\s\S]*?<\/figure>\s*)+/g,match=>imageGroups(imageTags(match)));}
 export const sample=`# 如何让 AI 回答更容易阅读？
 
 好的排版不仅是文字整齐，更要让读者一眼看懂**哪些内容属于同一组**。在这里，你可以边修改 Markdown，边调试回答的字号、行高和模块间距。
