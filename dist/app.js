@@ -1,4 +1,4 @@
-import {labels,fonts,preset,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20260914-image-grid-v1';
+import {labels,fonts,preset,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20260914-image-grid-v2';
 import {installGapOverlay} from './gaps.js';
 import {defaultSnapshot} from './default-config.js';
 import {buildFigmaScripterScript} from './figma-export.js?v=20260911-figma-export-v1';
