@@ -7,8 +7,8 @@ const clamp = (n,min,max,fallback) => Number.isFinite(Number(n)) ? Math.min(max,
 export function preset(scene='web') {
   const mobile=scene==='app',card=scene==='card';
   const gap=card?16:mobile?12:16, size=mobile?17:15;
-  const text=(size,line,weight=400,after=gap,font='system')=>({size,line,unit:'px',weight,color:'#242a33',font,before:0,after});
-  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:25,cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,ruleColor:'#e2e5eb',ruleWidth:1};
+  const text=(size,line,weight=400,after=gap,font='system')=>({size,line,unit:'px',weight,color:'#36393f',font,before:0,after});
+  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:25,cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,colorVersion:1,ruleColor:'#e8eaed',ruleWidth:1};
   const lineMultiplier=card?1.6:1.7;
   config.body=text(size,lineMultiplier);config.body.unit='multiplier';if(card)config.body.after=6;
   const headingSizes=[size+5,size+3,size+1,size,size,size];
@@ -16,14 +16,14 @@ export function preset(scene='web') {
   const headingAfter=[config.body.after+2,config.body.after,config.body.after-2,config.body.after-4,config.body.after-4,config.body.after-4];
   for(let i=1;i<=6;i++){const headingSize=headingSizes[i-1];config['h'+i]=text(headingSize,lineMultiplier,i<=4?600:500);config['h'+i].unit='multiplier';config['h'+i].before=Math.max(0,headingBefore[i-1]);config['h'+i].after=Math.max(0,headingAfter[i-1]);}
   config.ol=text(size,lineMultiplier);config.ol.unit='multiplier';config.ul=text(size,lineMultiplier);config.ul.unit='multiplier';config.ol.after=config.body.after;config.ul.after=config.body.after;
-  config.quote=text(card||mobile?15:13,card||mobile?24:18,400,10);config.quote.color='#657084';config.quote.unit='px';config.quote.before=10;config.quote.after=10;
+  config.quote=text(card||mobile?15:13,card||mobile?24:18,400,10);config.quote.color='#36393f';config.quote.unit='px';config.quote.before=10;config.quote.after=10;
   config.code=text(13,17,400,16,'mono');config.code.before=config.body.after+4;config.code.after=config.body.after+4;
   config.table=text(size,lineMultiplier,400,16);config.table.unit='multiplier';config.table.before=config.body.after+4;config.table.after=config.body.after+4;
   config.thead=text(size,lineMultiplier,600,0);config.thead.unit='multiplier';
   config.image=text(size,card?24:size*1.7,400);config.image.before=config.body.after+4;config.image.after=config.body.after+4;config.image.gap=8;
   config.hr={before:gap,after:gap};
-  config.mark={background:'#dcd7ff',color:'#37383c',styleVersion:2};
-  config.highlight={background:'#efecff',color:'#37383c'};
+  config.mark={background:'#dcd7ff',color:'#36393f',styleVersion:2};
+  config.highlight={background:'#efecff',color:'#36393f'};
   return config;
 }
 export function normalize(raw,scene) {
@@ -49,6 +49,21 @@ export function normalize(raw,scene) {
     if(tag==='mark' && raw.mark?.styleVersion!==2)continue;
     if(/^#[0-9a-f]{6}$/i.test(raw[tag]?.[key]))c[tag][key]=raw[tag][key];
   }
+  if(raw.colorVersion!==1){
+    for(const key of Object.keys(labels))if(key!=='hr')c[key].color='#36393f';
+    c.mark.color=c.highlight.color='#36393f';
+    c.ruleColor='#e8eaed';
+  }
+  if(raw.rhythm==='css-20261014')c.rhythm=raw.rhythm;
+  return c;
+}
+export function cssTemplate(base=preset('app')){
+  const c=normalize(base,'app');
+  c.rhythm='css-20261014';c.tightTitles=false;
+  const specs={body:[17,1.7,'multiplier',0,8],h1:[22,1.7,'multiplier',18,10],h2:[20,1.7,'multiplier',14,8],h3:[18,1.7,'multiplier',12,6],h4:[17,1.7,'multiplier',10,4],h5:[17,1.7,'multiplier',10,4],h6:[17,1.7,'multiplier',10,4],ol:[17,1.7,'multiplier',0,8],ul:[17,1.7,'multiplier',0,8],quote:[15,24,'px',10,10],code:[13,17,'px',12,12],table:[15,1.7,'multiplier',12,12],thead:[15,1.7,'multiplier',0,0],image:[15,25.5,'px',12,12]};
+  for(const [key,[size,line,unit,before,after]] of Object.entries(specs))Object.assign(c[key],{size,line,unit,before,after});
+  Object.assign(c,{indent:25,itemGap:4,cellPadding:8,columnMin:40,columnMax:240});
+  c.image.gap=8;c.hr={before:18,after:18};
   return c;
 }
 export function switchUnit(style,unit) {
@@ -66,10 +81,11 @@ export function gapSource(c,previous,next) {
   if(after===before)return `${name(previous)}段后 = ${name(next)}段前`;
   return after>before?`${name(previous)}段后`:`${name(next)}段前`;
 }
-const typography=s=>`font-family:${fonts[s.font]};font-size:${s.size}px;line-height:${s.line}${s.unit==='px'?'px':''};font-weight:${s.weight};color:${s.color};`;
+const colorValue=value=>({'#36393f':'var(--MapText03A)','#e8eaed':'var(--MapUIFrame09A)','#f5f7fa':'var(--MapUIFrame10A)','#084289':'var(--MapLink)'}[value.toLowerCase()]||value);
+const typography=s=>`font-family:${fonts[s.font]};font-size:${s.size}px;line-height:${s.line}${s.unit==='px'?'px':''};font-weight:${s.weight};color:${colorValue(s.color)};`;
 export function buildCSS(c) {
   const all=Object.values(selectors).join(',');
-  let css=`/* AI 回答样式实验室 · 将 Markdown 包裹在 .markdown-body 中。\n * 表格包裹在 .md-table 中。间距=max(上一块段后,下一块段前)，不叠加。\n * 段前/段后以元素盒为基准，不包含字体行框内部留白。 */\n.markdown-body{${typography(c.body)}overflow-wrap:anywhere;display:flow-root;}\n.markdown-body :where(${all}){margin:0;}\n.markdown-body :where(h1,h2,h3,h4,h5,h6){padding:0;}\n`;
+  let css=`/* AI 回答样式实验室 · 将 Markdown 包裹在 .markdown-body 中。\n * 表格包裹在 .md-table 中。间距=max(上一块段后,下一块段前)，不叠加。\n * 段前/段后以元素盒为基准，不包含字体行框内部留白。 */\n.markdown-body{--MapText03A:#36393f;--MapUIFrame09A:#e8eaed;--MapUIFrame10A:#f5f7fa;--MapLink:#084289;${typography(c.body)}overflow-wrap:anywhere;display:flow-root;}\n.markdown-body :where(${all}){margin:0;}\n.markdown-body :where(h1,h2,h3,h4,h5,h6){padding:0;}\n`;
   for(const [k,selector] of Object.entries(selectors)) {
     if(k!=='hr')css+=`.markdown-body ${selector}{${typography(c[k])}}\n`;
     css+=`.markdown-body ${selector}{margin-block-start:${c[k].before}px;}\n`;
@@ -78,8 +94,8 @@ export function buildCSS(c) {
   const imageWidth=`calc((100% - ${c.image.gap*2}px) / 3)`;
   css+=`.markdown-body figure.md-image{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:${c.image.gap}px;width:min(100%, 440px);max-width:440px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}\n.markdown-body figure.md-image img{display:block;flex:0 0 ${imageWidth};width:${imageWidth};aspect-ratio:1 / 1;height:auto;max-width:none;margin:0;border-radius:4px;object-fit:cover;}\n.markdown-body li > figure.md-image{width:min(100%, 440px);max-width:440px;margin-inline:0;padding-inline:0;}\n`;
   css+=`.markdown-body .md-table > table{min-width:100%;}\n`;
-  css+=`.markdown-body > :first-child,.markdown-body :where(li,blockquote) > :first-child{margin-block-start:0;}\n.markdown-body :where(ol,ul){padding-inline-start:${c.indent}px;}\n.markdown-body li + li{margin-block-start:${c.itemGap}px;}\n.markdown-body li > p,.markdown-body blockquote > p{font:inherit;color:inherit;}\n.markdown-body li > :last-child,.markdown-body blockquote > :last-child{margin-block-end:0;}\n.markdown-body blockquote{border-left:3px solid #dce1e9;padding:2px 0 2px 16px;display:flow-root;}\n.markdown-body pre{padding:16px;background:#f6f7f9;border:1px solid #e6e9ee;border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.markdown-body pre code{font:inherit;color:inherit;background:none;padding:0;}\n.markdown-body :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:#f1f3f6;border-radius:4px;padding:2px 5px;}\n.markdown-body .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid #e3e7ed;border-radius:8px;}\n.markdown-body table{width:max-content;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.markdown-body td,.markdown-body th{padding:${c.cellPadding}px;white-space:normal;border-bottom:1px solid #e3e7ed;border-right:1px solid #e3e7ed;vertical-align:top;text-align:left;}\n.markdown-body td{${typography(c.table)}}\n.markdown-body th{${typography(c.thead)}background:#f5f7fa;}\n.markdown-body tr > :last-child{border-right:0;}\n.markdown-body tbody tr:last-child td{border-bottom:0;}\n.markdown-body hr{border:0;height:${c.ruleWidth}px;background:${c.ruleColor};padding:0;}\n.markdown-body a{color:#2168ee;text-decoration:none;}\n.markdown-body a:hover{text-decoration:underline;}\n.markdown-body strong{font-weight:700;}\n.markdown-body img{max-width:100%;height:auto;}\n.markdown-body input[type=checkbox]{margin-inline-end:6px;}\n`;
-  css+=`.markdown-body mark{background-color:transparent;background-image:linear-gradient(${c.mark.background},${c.mark.background});background-repeat:no-repeat;background-position:0 95%;background-size:100% .5em;color:${c.mark.color};font-weight:700;padding:0;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n.markdown-body highlight{display:inline;background-color:${c.highlight.background};color:${c.highlight.color};font-weight:inherit;padding:.06em .04em;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
+  css+=`.markdown-body > :first-child,.markdown-body :where(li,blockquote) > :first-child{margin-block-start:0;}\n.markdown-body :where(ol,ul){padding-inline-start:${c.indent}px;}\n.markdown-body li + li{margin-block-start:${c.itemGap}px;}\n.markdown-body li > p,.markdown-body blockquote > p{font:inherit;color:inherit;}\n.markdown-body li > :last-child,.markdown-body blockquote > :last-child{margin-block-end:0;}\n.markdown-body blockquote{border-left:3px solid var(--MapUIFrame09A);padding:2px 0 2px 16px;display:flow-root;}\n.markdown-body pre{padding:16px;background:var(--MapUIFrame10A);border:1px solid var(--MapUIFrame09A);border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.markdown-body pre code{font:inherit;color:inherit;background:none;padding:0;}\n.markdown-body :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:var(--MapUIFrame10A);border-radius:4px;padding:2px 5px;}\n.markdown-body .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid var(--MapUIFrame09A);border-radius:8px;}\n.markdown-body table{width:max-content;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.markdown-body td,.markdown-body th{padding:${c.cellPadding}px;white-space:normal;border-bottom:1px solid var(--MapUIFrame09A);border-right:1px solid var(--MapUIFrame09A);vertical-align:top;text-align:left;}\n.markdown-body td{${typography(c.table)}}\n.markdown-body th{${typography(c.thead)}background:var(--MapUIFrame10A);}\n.markdown-body tr > :last-child{border-right:0;}\n.markdown-body tbody tr:last-child td{border-bottom:0;}\n.markdown-body hr{border:0;height:${c.ruleWidth}px;background:${colorValue(c.ruleColor)};padding:0;}\n.markdown-body a{color:var(--MapLink);text-decoration:none;}\n.markdown-body a:hover{text-decoration:underline;}\n.markdown-body strong{font-weight:700;}\n.markdown-body img{max-width:100%;height:auto;}\n.markdown-body input[type=checkbox]{margin-inline-end:6px;}\n`;
+  css+=`.markdown-body mark{background-color:transparent;background-image:linear-gradient(${c.mark.background},${c.mark.background});background-repeat:no-repeat;background-position:0 95%;background-size:100% .5em;color:${colorValue(c.mark.color)};font-weight:700;padding:0;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n.markdown-body highlight{display:inline;background-color:${c.highlight.background};color:${colorValue(c.highlight.color)};font-weight:inherit;padding:.06em .04em;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
   css+=`.markdown-body .md-cell{box-sizing:content-box;width:max-content;min-width:${c.columnMin}px;max-width:${Math.max(c.columnMin,c.columnMax)}px;white-space:normal;overflow-wrap:anywhere;word-break:normal;}\n`;
   return css;
 }
