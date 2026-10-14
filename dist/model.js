@@ -28,8 +28,8 @@ export function applySceneSpacing(c,scene='web'){
 export function preset(scene='web') {
   const mobile=scene==='app',card=scene==='card';
   const gap=card?16:mobile?12:16, size=mobile?17:15;
-  const text=(size,line,weight=400,after=gap,font='system')=>({size,line,unit:'px',weight,color:'#36393f',font,before:0,after});
-  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:25,cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,colorVersion:1,aiColorVersion:1,ruleColor:'#e8eaed',ruleWidth:1};
+  const text=(size,line,weight=400,after=gap,font='system')=>({size,line,unit:'px',weight,color:'#191b1f',font,before:0,after});
+  const config={width:card||mobile?390:840,padding:card||mobile?20:30,tightTitles:false,tight:card?4:8,itemGap:4,indent:25,cellPadding:8,columnMin:80,columnMax:card?200:mobile?240:280,colorVersion:1,textColorVersion:1,aiColorVersion:1,ruleColor:'#e8eaed',ruleWidth:1};
   const lineMultiplier=card?1.6:1.7;
   config.body=text(size,lineMultiplier);config.body.unit='multiplier';if(card)config.body.after=6;
   const headingSizes=[size+5,size+3,size+1,size,size,size];
@@ -37,14 +37,14 @@ export function preset(scene='web') {
   const headingAfter=[config.body.after+2,config.body.after,config.body.after-2,config.body.after-4,config.body.after-4,config.body.after-4];
   for(let i=1;i<=6;i++){const headingSize=headingSizes[i-1];config['h'+i]=text(headingSize,lineMultiplier,i<=4?600:500);config['h'+i].unit='multiplier';config['h'+i].before=Math.max(0,headingBefore[i-1]);config['h'+i].after=Math.max(0,headingAfter[i-1]);}
   config.ol=text(size,lineMultiplier);config.ol.unit='multiplier';config.ul=text(size,lineMultiplier);config.ul.unit='multiplier';config.ol.after=config.body.after;config.ul.after=config.body.after;
-  config.quote=text(card||mobile?15:13,card||mobile?24:18,400,10);config.quote.color='#36393f';config.quote.unit='px';config.quote.before=10;config.quote.after=10;
+  config.quote=text(card||mobile?15:13,card||mobile?24:18,400,10);config.quote.color='#81858f';config.quote.unit='px';config.quote.before=10;config.quote.after=10;
   config.code=text(13,17,400,16,'mono');config.code.before=config.body.after+4;config.code.after=config.body.after+4;
   config.table=text(size,lineMultiplier,400,16);config.table.unit='multiplier';config.table.before=config.body.after+4;config.table.after=config.body.after+4;
   config.thead=text(size,lineMultiplier,600,0);config.thead.unit='multiplier';
   config.image=text(size,card?24:size*1.7,400);config.image.before=config.body.after+4;config.image.after=config.body.after+4;config.image.gap=8;
   config.hr={before:gap,after:gap};
-  config.mark={background:'#574cf8',color:'#36393f',styleVersion:2};
-  config.highlight={background:'#574cf8',color:'#36393f'};
+  config.mark={background:'#574cf8',color:'#191b1f',styleVersion:2};
+  config.highlight={background:'#574cf8',color:'#191b1f'};
   return applySceneSpacing(applySceneSizes(config,scene),scene);
 }
 export function normalize(raw,scene) {
@@ -71,9 +71,16 @@ export function normalize(raw,scene) {
     if(/^#[0-9a-f]{6}$/i.test(raw[tag]?.[key]))c[tag][key]=raw[tag][key];
   }
   if(raw.colorVersion!==1){
-    for(const key of Object.keys(labels))if(key!=='hr')c[key].color='#36393f';
-    c.mark.color=c.highlight.color='#36393f';
+    for(const key of Object.keys(labels))if(key!=='hr')c[key].color=key==='quote'?'#81858f':'#191b1f';
+    c.mark.color=c.highlight.color='#191b1f';
     c.ruleColor='#e8eaed';
+  }
+  // Migrate the previous default text color once, preserving custom colors and layout.
+  if(raw.textColorVersion!==1){
+    for(const key of Object.keys(labels)){
+      if(key!=='hr' && c[key].color.toLowerCase()==='#36393f')c[key].color=key==='quote'?'#81858f':'#191b1f';
+    }
+    for(const tag of ['mark','highlight'])if(c[tag].color.toLowerCase()==='#36393f')c[tag].color='#191b1f';
   }
   if(raw.aiColorVersion!==1)c.mark.background=c.highlight.background='#574cf8';
   if(raw.rhythm==='css-20261014')c.rhythm=raw.rhythm;
@@ -105,11 +112,11 @@ export function gapSource(c,previous,next) {
   if(after===before)return `${name(previous)}段后 = ${name(next)}段前`;
   return after>before?`${name(previous)}段后`:`${name(next)}段前`;
 }
-const colorValue=value=>({'#36393f':'var(--MapText03A)','#e8eaed':'var(--MapUIFrame09A)','#f5f7fa':'var(--MapUIFrame10A)','#084289':'var(--MapLink)','#574cf8':'var(--MapAI)'}[value.toLowerCase()]||value);
+const colorValue=value=>({'#191b1f':'var(--MapText02A)','#81858f':'var(--MapText05A)','#e8eaed':'var(--MapUIFrame09A)','#f5f7fa':'var(--MapUIFrame10A)','#084289':'var(--MapLink)','#574cf8':'var(--MapAI)'}[value.toLowerCase()]||value);
 const typography=s=>`font-family:${fonts[s.font]};font-size:${s.size}px;line-height:${s.line}${s.unit==='px'?'px':''};font-weight:${s.weight};color:${colorValue(s.color)};`;
 export function buildCSS(c) {
   const all=Object.values(selectors).join(',');
-  let css=`/* AI 回答样式实验室 · 将 Markdown 包裹在 .markdown-body 中。\n * 表格包裹在 .md-table 中。间距=max(上一块段后,下一块段前)，不叠加。\n * 段前/段后以元素盒为基准，不包含字体行框内部留白。 */\n.markdown-body{--MapText03A:#36393f;--MapUIFrame09A:#e8eaed;--MapUIFrame10A:#f5f7fa;--MapLink:#084289;--MapAI:#574cf8;${typography(c.body)}overflow-wrap:anywhere;display:flow-root;}\n.markdown-body :where(${all}){margin:0;}\n.markdown-body :where(h1,h2,h3,h4,h5,h6){padding:0;}\n`;
+  let css=`/* AI 回答样式实验室 · 将 Markdown 包裹在 .markdown-body 中。\n * 表格包裹在 .md-table 中。间距=max(上一块段后,下一块段前)，不叠加。\n * 段前/段后以元素盒为基准，不包含字体行框内部留白。 */\n.markdown-body{--MapText02A:#191b1f;--MapText05A:#81858f;--MapUIFrame09A:#e8eaed;--MapUIFrame10A:#f5f7fa;--MapLink:#084289;--MapAI:#574cf8;${typography(c.body)}overflow-wrap:anywhere;display:flow-root;}\n.markdown-body :where(${all}){margin:0;}\n.markdown-body :where(h1,h2,h3,h4,h5,h6){padding:0;}\n`;
   for(const [k,selector] of Object.entries(selectors)) {
     if(k!=='hr')css+=`.markdown-body ${selector}{${typography(c[k])}}\n`;
     css+=`.markdown-body ${selector}{margin-block-start:${c[k].before}px;}\n`;
