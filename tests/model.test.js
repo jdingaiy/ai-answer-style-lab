@@ -14,7 +14,7 @@ test('image rows use responsive three-column square crops, configurable gap and 
 test('image groups are chunked at three images',()=>{const html=renderMarkdown('![一](https://example.com/1.png) ![二](https://example.com/2.png) ![三](https://example.com/3.png) ![四](https://example.com/4.png)');assert.equal((html.match(/<figure class="md-image(?: md-image-group)?">/g)||[]).length,2);assert.equal((html.match(/class="md-image md-image-group"/g)||[]).length,1);assert.equal((html.match(/<img\b/g)||[]).length,4);});
 test('legacy images share the current image format and use legacy table spacing',()=>{const css=buildLegacyCSS('web');assert.match(css,/\.legacy-layer pre,\.legacy-layer \.md-table,\.legacy-layer figure\.md-image\{margin:0 0 16px!important;/);assert.doesNotMatch(css,/\.legacy-layer img\{/);});
 test('tight ordered and unordered list images are wrapped as horizontal thumbnail rows',()=>{for(const marker of ['-','1.']){const html=renderMarkdown(`${marker} 列表文字\n   ![图一](https://example.com/a.png)\n   ![图二](https://example.com/b.png)`);assert.match(html,/<li>列表文字\s*<figure class="md-image md-image-group"><img[^>]+>\s*<img[^>]+><\/figure><\/li>/);}});
-test('stored preferences are clamped and cannot inject CSS',()=>{const c=normalize({sizeVersion:1,body:{size:999,color:'red;}body{display:none',font:'evil',line:-1,unit:'px'},width:4},'web');assert.equal(c.body.size,64);assert.equal(c.body.color,'#36393f');assert.equal(c.body.line,10);assert.equal(c.width,280);});
+test('stored preferences are clamped and cannot inject CSS',()=>{const c=normalize({sizeVersion:1,body:{size:999,color:'red;}body{display:none',font:'evil',line:-1,unit:'px'},width:4},'web');assert.equal(c.body.size,64);assert.equal(c.body.color,'#191b1f');assert.equal(c.body.line,10);assert.equal(c.width,280);});
 test('mark renders Chinese text, nested emphasis and line breaks',()=>{const html=renderMarkdown('<mark>结合你的89㎡两居室需求，优先选择**半包＋独立设计师**\n并保留*应急空间*</mark>。');assert.match(html,/<mark>结合你的89㎡/);assert.match(html,/<strong>半包＋独立设计师<\/strong>/);assert.match(html,/<em>应急空间<\/em><\/mark>/);});
 test('mark strips attributes and stays escaped in code',()=>{const html=renderMarkdown('<mark onclick="alert(1)" style="position:fixed">重点</mark>\n\n`<mark>代码</mark>`\n\n~~~html\n<mark>代码块</mark>\n~~~');assert.match(html,/<mark>重点<\/mark>/);assert.doesNotMatch(html,/onclick|position:fixed/);assert.match(html,/<code>&lt;mark&gt;代码&lt;\/mark&gt;<\/code>/);assert.match(html,/&lt;mark&gt;代码块&lt;\/mark&gt;/);});
 test('mark colors migrate from old preferences and reject CSS injection',()=>{const c=normalize({colorVersion:1,body:{size:18},mark:{styleVersion:2,background:'red;}body{display:none',color:'#123456'}},'web');assert.equal(c.mark.background,'#574cf8');assert.equal(c.mark.color,'#123456');assert.match(buildCSS(c),/\.markdown-body mark\{background-color:transparent;.*color:#123456;/);assert.deepEqual(normalize({},'app').mark,preset('app').mark);});
@@ -60,4 +60,24 @@ test('MapAI backgrounds migrate independently of typography and use alpha only o
  assert.ok(css.includes('color-mix(in srgb, var(--MapAI) 20%, transparent)'));
  assert.ok(css.includes('color-mix(in srgb, var(--MapAI) 10%, transparent)'));
  assert.doesNotMatch(css,/opacity:/);
+});
+
+test('Figma text tokens migrate across scenes once while retaining custom colors and layout',()=>{
+ for(const scene of ['web','app','card']){
+  const old=preset(scene);delete old.textColorVersion;
+  for(const key of ['body','h1','h2','h3','h4','h5','h6','ol','ul','quote','code','table','thead','image','mark','highlight'])old[key].color='#36393F';
+  old.body.size=23;old.h3.before=31;old.table.color='#123456';
+  const c=normalize(old,scene),css=buildCSS(c);
+  assert.equal(c.body.color,'#191b1f');assert.equal(c.quote.color,'#81858f');
+  assert.equal(c.mark.color,'#191b1f');assert.equal(c.highlight.color,'#191b1f');
+  assert.equal(c.table.color,'#123456');assert.equal(c.body.size,23);assert.equal(c.h3.before,31);
+  assert.ok(css.includes('--MapText02A:#191b1f;--MapText05A:#81858f;'));
+  assert.match(css,/blockquote\{[^}]*color:var\(--MapText05A\)/);
+  assert.match(css,/\.markdown-body p\{[^}]*color:var\(--MapText02A\)/);
+  assert.doesNotMatch(css,/MapText03A/);
+  assert.deepEqual(normalize(c,scene),c);
+  c.body.color='#36393f';c.quote.color='#654321';
+  const edited=normalize(c,scene);assert.equal(edited.body.color,'#36393f');assert.equal(edited.quote.color,'#654321');
+  assert.equal(preset(scene).quote.color,'#81858f');
+ }
 });
