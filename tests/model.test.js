@@ -17,8 +17,8 @@ test('tight ordered and unordered list images are wrapped as horizontal thumbnai
 test('stored preferences are clamped and cannot inject CSS',()=>{const c=normalize({sizeVersion:1,body:{size:999,color:'red;}body{display:none',font:'evil',line:-1,unit:'px'},width:4},'web');assert.equal(c.body.size,64);assert.equal(c.body.color,'#36393f');assert.equal(c.body.line,10);assert.equal(c.width,280);});
 test('mark renders Chinese text, nested emphasis and line breaks',()=>{const html=renderMarkdown('<mark>结合你的89㎡两居室需求，优先选择**半包＋独立设计师**\n并保留*应急空间*</mark>。');assert.match(html,/<mark>结合你的89㎡/);assert.match(html,/<strong>半包＋独立设计师<\/strong>/);assert.match(html,/<em>应急空间<\/em><\/mark>/);});
 test('mark strips attributes and stays escaped in code',()=>{const html=renderMarkdown('<mark onclick="alert(1)" style="position:fixed">重点</mark>\n\n`<mark>代码</mark>`\n\n~~~html\n<mark>代码块</mark>\n~~~');assert.match(html,/<mark>重点<\/mark>/);assert.doesNotMatch(html,/onclick|position:fixed/);assert.match(html,/<code>&lt;mark&gt;代码&lt;\/mark&gt;<\/code>/);assert.match(html,/&lt;mark&gt;代码块&lt;\/mark&gt;/);});
-test('mark colors migrate from old preferences and reject CSS injection',()=>{const c=normalize({colorVersion:1,body:{size:18},mark:{styleVersion:2,background:'red;}body{display:none',color:'#123456'}},'web');assert.equal(c.mark.background,'#dcd7ff');assert.equal(c.mark.color,'#123456');assert.match(buildCSS(c),/\.markdown-body mark\{background-color:transparent;.*color:#123456;/);assert.deepEqual(normalize({},'app').mark,preset('app').mark);});
-test('highlight and mark have distinct reference styles and safe markup',()=>{const c=preset();const css=buildCSS(c);assert.match(css,/background-size:100% .5em/);assert.match(css,/highlight\{display:inline;background-color:#efecff/);const html=renderMarkdown('<highlight onclick="x()">**高亮强调**</highlight> 和 <mark>标记</mark>');assert.match(html,/<highlight><strong>高亮强调<\/strong><\/highlight>/);assert.doesNotMatch(html,/onclick/);const migrated=normalize({sizeVersion:1,body:{size:19},mark:{background:'#fff2a8',color:'#111111'}},'web');assert.equal(migrated.body.size,19);assert.equal(migrated.mark.background,'#dcd7ff');});
+test('mark colors migrate from old preferences and reject CSS injection',()=>{const c=normalize({colorVersion:1,body:{size:18},mark:{styleVersion:2,background:'red;}body{display:none',color:'#123456'}},'web');assert.equal(c.mark.background,'#574cf8');assert.equal(c.mark.color,'#123456');assert.match(buildCSS(c),/\.markdown-body mark\{background-color:transparent;.*color:#123456;/);assert.deepEqual(normalize({},'app').mark,preset('app').mark);});
+test('highlight and mark have distinct reference styles and safe markup',()=>{const c=preset();const css=buildCSS(c);assert.match(css,/background-size:100% .5em/);assert.match(css,/highlight\{display:inline;background-color:color-mix\(in srgb, var\(--MapAI\) 10%, transparent\)/);const html=renderMarkdown('<highlight onclick="x()">**高亮强调**</highlight> 和 <mark>标记</mark>');assert.match(html,/<highlight><strong>高亮强调<\/strong><\/highlight>/);assert.doesNotMatch(html,/onclick/);const migrated=normalize({sizeVersion:1,body:{size:19},mark:{background:'#fff2a8',color:'#111111'}},'web');assert.equal(migrated.body.size,19);assert.equal(migrated.mark.background,'#574cf8');});
 test('standalone mark block keeps emphasis and strips unsafe attributes',()=>{const html=renderMarkdown('<mark onclick="evil()">\n高亮 **内容**\n</mark>');assert.match(html,/<mark>\n高亮 <strong>内容<\/strong>\n<\/mark>/);assert.doesNotMatch(html,/onclick|evil/);});
 test('existing scene parameters are preserved when mark settings are introduced',()=>{for(const scene of ['web','app','card']){const old=preset(scene);delete old.mark;old.body.size=19;old.body.line=1.85;old.body.unit='multiplier';old.h3.before=23;old.table.after=31;old.hr.before=19;old.hr.after=29;old.width=420;const migrated=normalize(JSON.parse(JSON.stringify(old)),scene);const {mark,...retained}=migrated;assert.deepEqual(retained,old);assert.deepEqual(mark,preset(scene).mark);}});
 
@@ -49,4 +49,15 @@ test('scene spacing matches the design table and persists after editing',()=>{
    c.h3.before=37;assert.equal(normalize(c,scene).h3.before,37);
   }
  }
+});
+
+test('MapAI backgrounds migrate independently of typography and use alpha only on backgrounds',()=>{
+ const old=preset('app');delete old.aiColorVersion;old.mark.background='#dcd7ff';old.highlight.background='#efecff';old.h1.size=23;old.body.after=9;
+ const c=normalize(old,'app'),css=buildCSS(c);
+ assert.equal(c.mark.background,'#574cf8');assert.equal(c.highlight.background,'#574cf8');
+ assert.equal(c.h1.size,23);assert.equal(c.body.after,9);
+ assert.ok(css.includes('--MapAI:#574cf8;'));
+ assert.ok(css.includes('color-mix(in srgb, var(--MapAI) 20%, transparent)'));
+ assert.ok(css.includes('color-mix(in srgb, var(--MapAI) 10%, transparent)'));
+ assert.doesNotMatch(css,/opacity:/);
 });
