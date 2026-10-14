@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {gapSource} from '../dist/model.js';
-test('gap annotations identify the effective spacing rule',()=>{const c=preset();c.h3.before=24;assert.equal(gapSource(c,'body','h3'),'H3段前');c.h3.before=8;assert.equal(gapSource(c,'body','h3'),'正文段后');c.h3.before=16;assert.equal(gapSource(c,'body','h3'),'正文段后 = H3段前');c.tightTitles=true;assert.equal(gapSource(c,'h2','h3'),'父子标题间距');c.hr.after=32;assert.equal(gapSource(c,'hr','h3'),'分割线段后');});
-test('images have independent spacing and CSS rules',()=>{const c=preset();c.image.before=18;c.image.after=12;assert.equal(blockGap(c,'body','image'),18);assert.equal(gapSource(c,'image','h2'),'图片段后 = H2段前');assert.match(buildCSS(c),/\.markdown-body figure\.md-image\{[^}]*margin-block-start:18px/);});
+test('gap annotations identify the effective spacing rule',()=>{const c=preset();c.body.after=16;c.h3.before=24;assert.equal(gapSource(c,'body','h3'),'H3段前');c.h3.before=8;assert.equal(gapSource(c,'body','h3'),'正文段后');c.h3.before=16;assert.equal(gapSource(c,'body','h3'),'正文段后 = H3段前');c.tightTitles=true;assert.equal(gapSource(c,'h2','h3'),'父子标题间距');c.hr.after=32;assert.equal(gapSource(c,'hr','h3'),'分割线段后');});
+test('images have independent spacing and CSS rules',()=>{const c=preset();c.image.before=18;c.image.after=12;c.h2.before=12;assert.equal(blockGap(c,'body','image'),18);assert.equal(gapSource(c,'image','h2'),'图片段后 = H2段前');assert.match(buildCSS(c),/\.markdown-body figure\.md-image\{[^}]*margin-block-start:18px/);});
 test('bounded cells and canonical markdown-body CSS',()=>{const c=preset('web'),css=buildCSS(c);assert.match(css,/\.markdown-body \.md-cell\{[^}]*max-width:280px/);assert.match(css,/\.markdown-body \.md-table > table\{min-width:100%/);assert.doesNotMatch(css,/\.answer/);const html=renderMarkdown('| 项目 | 说明 |\n| --- | --- |\n| A | 很长的说明 |');assert.equal((html.match(/class="md-cell"/g)||[]).length,4);assert.equal(normalize({columnMin:300,columnMax:100},'app').columnMax,300);});
 import {preset,switchUnit,blockGap,buildCSS,buildLegacyCSS,renderMarkdown,normalize,sample} from '../dist/model.js';
 test('px and multiplier round trip preserves equivalent line height',()=>{const style=preset().body;const times=switchUnit(style,'multiplier');assert.equal(times.line,1.7);assert.equal(switchUnit(times,'px').line,25.5);assert.equal(switchUnit({...times,size:20},'px').line,34);});
@@ -26,11 +26,27 @@ import {cssTemplate} from '../dist/model.js';
 test('scene typography migrates once and templates use the screenshot sizes',()=>{
   const expected={web:[15,19,17,15,15,15,15],app:[17,19,18,17,17,17,17],card:[15,17,16,15,15,15,15]};
   for(const scene of Object.keys(expected)){
-    const c=normalize({body:{size:21,after:23},h1:{before:31}},scene);
+    const c=normalize({spacingVersion:1,body:{size:21,after:23},h1:{before:31}},scene);
     assert.deepEqual(['body','h1','h2','h3','h4','h5','h6'].map(k=>c[k].size),expected[scene]);
     assert.equal(c.body.after,23);assert.equal(c.h1.before,31);
     const template=cssTemplate(c,scene);
     assert.deepEqual(['body','h1','h2','h3','h4','h5','h6'].map(k=>template[k].size),expected[scene]);
     c.h1.size=25;assert.equal(normalize(c,scene).h1.size,25);
   }
+});
+
+test('scene spacing matches the design table and persists after editing',()=>{
+ for(const [scene,divider,before,after,bodyAfter,moduleGap] of [
+ ['web',20,[20,16,12,12,12,12],[10,8,6,6,6,6],8,12],
+ ['app',18,[18,14,10,10,10,10],[10,8,6,6,6,6],8,12],
+ ['card',16,[16,12,8,8,8,8],[8,6,4,4,4,4],6,10]]){
+  for(const c of [preset(scene),normalize({hr:{before:99},h3:{after:99}},scene),cssTemplate(preset(scene),scene)]){
+   assert.equal(c.hr.before,divider);assert.equal(c.hr.after,divider);
+   for(let i=1;i<=6;i++){assert.equal(c['h'+i].before,before[i-1]);assert.equal(c['h'+i].after,after[i-1]);}
+   for(const key of ['body','ol','ul']){assert.equal(c[key].before,0);assert.equal(c[key].after,bodyAfter);}
+   for(const key of ['image','code','table']){assert.equal(c[key].before,moduleGap);assert.equal(c[key].after,moduleGap);}
+   assert.equal(c.quote.before,10);assert.equal(c.quote.after,10);
+   c.h3.before=37;assert.equal(normalize(c,scene).h3.before,37);
+  }
+ }
 });
