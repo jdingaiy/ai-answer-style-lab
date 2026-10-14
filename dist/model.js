@@ -4,6 +4,14 @@ export const labels = { body:'正文', h1:'H1 · 一级标题', h2:'H2 · 二级
 export const fonts = {system:'-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",Arial,sans-serif',serif:'"Songti SC","Noto Serif SC",serif',mono:'ui-monospace,SFMono-Regular,Consolas,monospace'};
 export const selectors = { body:'p',h1:'h1',h2:'h2',h3:'h3',h4:'h4',h5:'h5',h6:'h6',ol:'ol',ul:'ul',quote:'blockquote',code:'pre',table:'.md-table',image:'figure.md-image',hr:'hr' };
 const clamp = (n,min,max,fallback) => Number.isFinite(Number(n)) ? Math.min(max,Math.max(min,Number(n))) : fallback;
+export function applySceneSizes(c,scene='web'){
+  const size=scene==='app'?17:15;
+  const headings=scene==='app'?[19,18,17,17,17,17]:scene==='card'?[17,16,15,15,15,15]:[19,17,15,15,15,15];
+  for(const key of ['body','ol','ul'])c[key].size=size;
+  headings.forEach((n,i)=>c['h'+(i+1)].size=n);
+  c.sizeVersion=1;
+  return c;
+}
 export function preset(scene='web') {
   const mobile=scene==='app',card=scene==='card';
   const gap=card?16:mobile?12:16, size=mobile?17:15;
@@ -24,7 +32,7 @@ export function preset(scene='web') {
   config.hr={before:gap,after:gap};
   config.mark={background:'#dcd7ff',color:'#36393f',styleVersion:2};
   config.highlight={background:'#efecff',color:'#36393f'};
-  return config;
+  return applySceneSizes(config,scene);
 }
 export function normalize(raw,scene) {
   const c=preset(scene);if(!raw||typeof raw!=='object')return c;
@@ -55,16 +63,17 @@ export function normalize(raw,scene) {
     c.ruleColor='#e8eaed';
   }
   if(raw.rhythm==='css-20261014')c.rhythm=raw.rhythm;
+  if(raw.sizeVersion!==1)applySceneSizes(c,scene);
   return c;
 }
-export function cssTemplate(base=preset('app')){
+export function cssTemplate(base=preset('app'),scene='app'){
   const c=normalize(base,'app');
   c.rhythm='css-20261014';c.tightTitles=false;
   const specs={body:[17,1.7,'multiplier',0,8],h1:[22,1.7,'multiplier',18,10],h2:[20,1.7,'multiplier',14,8],h3:[18,1.7,'multiplier',12,6],h4:[17,1.7,'multiplier',10,4],h5:[17,1.7,'multiplier',10,4],h6:[17,1.7,'multiplier',10,4],ol:[17,1.7,'multiplier',0,8],ul:[17,1.7,'multiplier',0,8],quote:[15,24,'px',10,10],code:[13,17,'px',12,12],table:[15,1.7,'multiplier',12,12],thead:[15,1.7,'multiplier',0,0],image:[15,25.5,'px',12,12]};
   for(const [key,[size,line,unit,before,after]] of Object.entries(specs))Object.assign(c[key],{size,line,unit,before,after});
   Object.assign(c,{indent:25,itemGap:4,cellPadding:8,columnMin:40,columnMax:240});
   c.image.gap=8;c.hr={before:18,after:18};
-  return c;
+  return applySceneSizes(c,scene);
 }
 export function switchUnit(style,unit) {
   if(style.unit===unit)return {...style};
