@@ -12,6 +12,19 @@ export function applySceneSizes(c,scene='web'){
   c.sizeVersion=1;
   return c;
 }
+export function applySceneSpacing(c,scene='web'){
+  const card=scene==='card',app=scene==='app';
+  const divider=card?16:app?18:20, after=card?6:8;
+  c.body.before=0;c.body.after=after;
+  c.hr={before:divider,after:divider};
+  const headingBefore=card?[16,12,8,8,8,8]:app?[18,14,10,10,10,10]:[20,16,12,12,12,12];
+  const headingAfter=card?[8,6,4,4,4,4]:[10,8,6,6,6,6];
+  for(let i=1;i<=6;i++)Object.assign(c['h'+i],{before:headingBefore[i-1],after:headingAfter[i-1]});
+  for(const key of ['ol','ul'])Object.assign(c[key],{before:0,after});
+  for(const key of ['quote','image','code','table'])Object.assign(c[key],{before:key==='quote'?10:card?10:12,after:key==='quote'?10:card?10:12});
+  c.tightTitles=false;c.spacingVersion=1;
+  return c;
+}
 export function preset(scene='web') {
   const mobile=scene==='app',card=scene==='card';
   const gap=card?16:mobile?12:16, size=mobile?17:15;
@@ -32,7 +45,7 @@ export function preset(scene='web') {
   config.hr={before:gap,after:gap};
   config.mark={background:'#dcd7ff',color:'#36393f',styleVersion:2};
   config.highlight={background:'#efecff',color:'#36393f'};
-  return applySceneSizes(config,scene);
+  return applySceneSpacing(applySceneSizes(config,scene),scene);
 }
 export function normalize(raw,scene) {
   const c=preset(scene);if(!raw||typeof raw!=='object')return c;
@@ -64,6 +77,7 @@ export function normalize(raw,scene) {
   }
   if(raw.rhythm==='css-20261014')c.rhythm=raw.rhythm;
   if(raw.sizeVersion!==1)applySceneSizes(c,scene);
+  if(raw.spacingVersion!==1)applySceneSpacing(c,scene);
   return c;
 }
 export function cssTemplate(base=preset('app'),scene='app'){
@@ -73,7 +87,7 @@ export function cssTemplate(base=preset('app'),scene='app'){
   for(const [key,[size,line,unit,before,after]] of Object.entries(specs))Object.assign(c[key],{size,line,unit,before,after});
   Object.assign(c,{indent:25,itemGap:4,cellPadding:8,columnMin:40,columnMax:240});
   c.image.gap=8;c.hr={before:18,after:18};
-  return applySceneSizes(c,scene);
+  return applySceneSpacing(applySceneSizes(c,scene),scene);
 }
 export function switchUnit(style,unit) {
   if(style.unit===unit)return {...style};
