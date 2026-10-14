@@ -1,6 +1,6 @@
-import {labels,fonts,preset,cssTemplate,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20261014-text-tokens-v5';
+import {labels,fonts,preset,cssTemplate,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20261014-style-sample-v6';
 import {installGapOverlay} from './gaps.js';
-import {defaultSnapshot} from './default-config.js';
+import {defaultSnapshot,previousDefaultSource} from './default-config.js?v=20261014-style-sample-v6';
 import {buildFigmaScripterScript} from './figma-export.js?v=20260911-figma-export-v1';
 const $=id=>document.getElementById(id);
 const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-fixed-quote-spacing-v17';
@@ -14,7 +14,7 @@ function applyCardSpacing(c,sceneName){if(c.spacingVersion===1)return c;if(c.rhy
 for(const s of Object.keys(scenes))applyCardSpacing(applyLineRhythm(applyHeadingRhythm(configs[s]),s),s);
 function decodeShared(raw){try{const text=decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/'))));return JSON.parse(text);}catch{return null;}}
 function encodeShared(value){const bytes=new TextEncoder().encode(JSON.stringify(value));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
-try {const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved){if(saved.defaultConfigVersion===DEFAULT_CONFIG_VERSION){if(Object.hasOwn(scenes,saved.scene))scene=saved.scene;for(const s of Object.keys(scenes))configs[s]=normalize(saved.configs?.[s],s);if(typeof saved.source==='string')source=saved.source;}versions=Array.isArray(saved.versions)?saved.versions.filter(v=>v&&typeof v.id==='string'&&v.configs).map(v=>({id:v.id,name:String(v.name||'未命名版本'),createdAt:v.createdAt||'',source:typeof v.source==='string'?v.source:sample,configs:Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(v.configs[s],s)]))})):[];activeVersion=typeof saved.activeVersion==='string'?saved.activeVersion:'';}}catch{/* A corrupt or unavailable local preference store does not block editing. */}
+try {const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved){if(saved.defaultConfigVersion===DEFAULT_CONFIG_VERSION){if(Object.hasOwn(scenes,saved.scene))scene=saved.scene;for(const s of Object.keys(scenes))configs[s]=normalize(saved.configs?.[s],s);if(typeof saved.source==='string')source=saved.source===previousDefaultSource?defaultSnapshot.source:saved.source;}versions=Array.isArray(saved.versions)?saved.versions.filter(v=>v&&typeof v.id==='string'&&v.configs).map(v=>({id:v.id,name:String(v.name||'未命名版本'),createdAt:v.createdAt||'',source:typeof v.source==='string'?v.source:sample,configs:Object.fromEntries(Object.keys(scenes).map(s=>[s,normalize(v.configs[s],s)]))})):[];activeVersion=typeof saved.activeVersion==='string'?saved.activeVersion:'';}}catch{/* A corrupt or unavailable local preference store does not block editing. */}
 for(const s of Object.keys(scenes))applyCardSpacing(applyLineRhythm(applyHeadingRhythm(configs[s]),s),s);
 const shared=decodeShared(new URLSearchParams(location.search).get('share')||'');if(shared?.configs){for(const s of Object.keys(scenes))configs[s]=applyCardSpacing(applyLineRhythm(applyHeadingRhythm(normalize(shared.configs[s],s)),s),s);if(typeof shared.source==='string')source=shared.source;activeVersion='';}
 const current=()=>configs[scene];
