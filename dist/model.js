@@ -90,7 +90,8 @@ export function normalize(raw,scene) {
   if(c.experimentGroup){
     if(c.experimentGroup==='experiment-two' && scene==='card' && Number(raw.experimentVersion||0)<2)applySceneSpacing(c,scene);
     if(c.experimentGroup!=='experiment-control' && Number(raw.experimentVersion||0)<3)applyExperimentLineHeight(c);
-    c.experimentVersion=3;
+    if(c.experimentGroup!=='experiment-control' && Number(raw.experimentVersion||0)<4)c.quote.color='#81858f';
+    c.experimentVersion=4;
   }
   return c;
 }
@@ -134,8 +135,9 @@ export function experimentConfig(scene='web',group='experiment-one',raw={}){
   const color=control?'#36393f':'#191b1f';
   for(const key of Object.keys(labels))if(key!=='hr')c[key].color=color;
   c.mark.color=c.highlight.color=color;
+  if(!control)c.quote.color='#81858f';
   if(!control)applyExperimentLineHeight(c);
-  c.rhythm='experiment-v1';c.experimentGroup=group;c.experimentVersion=3;
+  c.rhythm='experiment-v1';c.experimentGroup=group;c.experimentVersion=4;
   return c;
 }
 export function switchUnit(style,unit) {
