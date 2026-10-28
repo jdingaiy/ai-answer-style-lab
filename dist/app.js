@@ -1,6 +1,6 @@
-import {labels,fonts,experimentVersions,experimentConfig,preset,cssTemplate,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20261028-marker-07a-v2';
+import {labels,fonts,experimentVersions,experimentConfig,preset,cssTemplate,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20261028-marker-divider-v3';
 import {installGapOverlay} from './gaps.js';
-import {defaultSnapshot,previousDefaultSource} from './default-config.js?v=20261028-marker-07a-v2';
+import {defaultSnapshot,previousDefaultSource} from './default-config.js?v=20261028-marker-divider-v3';
 import {buildFigmaScripterScript} from './figma-export.js?v=20260911-figma-export-v1';
 const $=id=>document.getElementById(id);
 const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-fixed-quote-spacing-v17';
@@ -51,7 +51,7 @@ function renderControls(preserve=true){
     let fields=key==='hr'?'':textFields(key,c[key]);
     if(key!=='thead')fields+=spacingFields(key,c[key]);
     if(key==='ol')fields+=numberField('列表项间距','itemGap',c.itemGap,{max:80})+numberField('列表整体缩进','indent',c.indent,{min:0,max:80})+`<button class="wide-button" id="sync-spacing">将段前／段后应用到引用、代码、表格</button><p class="hint">默认 25px，同时作用于有序列表和无序列表。</p>`;
-    if(key==='ul')fields+=`<p class="hint">圆点使用 MapText07A 灰色色组；列表项间距与左缩进沿用有序列表设置。</p>`;
+    if(key==='ul')fields+=`<p class="hint">圆点使用 MapUIFrame09A，与分割线颜色一致；列表项间距与左缩进沿用有序列表设置。</p>`;
     if(key==='table')fields+=numberField('单元格内边距','cellPadding',c.cellPadding,{max:40})+numberField('列内容最小宽度','columnMin',c.columnMin,{min:40,max:400})+numberField('列内容最大宽度','columnMax',c.columnMax,{min:80,max:600})+`<p class="hint">短内容按需占宽，长内容达到上限后换行；表格总宽超出时左右滑动。列宽另加两侧内边距。</p>`;
     if(key==='image')fields+=numberField('图片间隙','image.gap',c.image.gap,{min:0,max:40})+`<p class="hint">每组最多 3 张；每张按三列等分内容宽度，保持 1:1 裁切。列表中的图片与列表文字左侧对齐。</p>`;
     if(key==='hr')fields+=numberField('线条粗细','ruleWidth',c.ruleWidth,{min:1,max:8})+colorField('线条颜色','ruleColor',c.ruleColor)+`<p class="hint">上下两侧分别参与相邻间距计算，分割线本身不再附带默认 margin。</p>`;
