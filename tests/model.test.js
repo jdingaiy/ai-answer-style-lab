@@ -131,3 +131,18 @@ test('both experiments use 1.7 line height in every scene, migrate once and pres
   assert.equal(control.h1.line,scene==='card'?24:27);assert.equal(control.code.line,17);
  }
 });
+
+test('experimental quotes use MapText05A and migrate without changing typography or control',()=>{
+ for(const scene of ['web','app','card'])for(const group of ['experiment-control','experiment-one','experiment-two']){
+  const c=experimentConfig(scene,group,defaultSnapshot.configs[scene]);
+  const expected=group==='experiment-control'?'#36393f':'#81858f';
+  assert.equal(c.quote.color,expected);
+  const css=buildCSS(c);
+  assert.ok(css.includes(`blockquote{font-family:`));
+  if(group!=='experiment-control')assert.match(css,/blockquote\{[^}]*color:var\(--MapText05A\)/);
+  c.experimentVersion=3;c.quote.color=group==='experiment-control'?'#36393f':'#191b1f';
+  const migrated=normalize(c,scene);
+  assert.equal(migrated.quote.color,expected);
+  for(const k of ['size','line','unit','before','after'])assert.equal(migrated.quote[k],c.quote[k]);
+ }
+});
