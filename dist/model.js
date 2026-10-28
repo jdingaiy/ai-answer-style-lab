@@ -87,6 +87,10 @@ export function normalize(raw,scene) {
   if(Object.hasOwn(experimentVersions,raw.experimentGroup))c.experimentGroup=raw.experimentGroup;
   if(raw.sizeVersion!==1)applySceneSizes(c,scene);
   if(raw.spacingVersion!==1)applySceneSpacing(c,scene);
+  if(c.experimentGroup){
+    if(c.experimentGroup==='experiment-two' && scene==='card' && raw.experimentVersion!==2)applySceneSpacing(c,scene);
+    c.experimentVersion=2;
+  }
   return c;
 }
 export function cssTemplate(base=preset('app'),scene='app'){
@@ -116,8 +120,6 @@ export function experimentConfig(scene='web',group='experiment-one',raw={}){
     for(let n=1;n<=6;n++)Object.assign(c['h'+n],{size:n<=2?(card?16:18):(card?15:app?17:16),line:card?24:27,unit:'px',weight:n<=2?(card?600:700):n===3?700:500});
   }
   if(group==='experiment-two' && card){
-    const legacy=experimentConfig(scene,'experiment-control',raw);
-    for(const key of Object.keys(selectors))Object.assign(c[key],{before:legacy[key].before,after:legacy[key].after});
     for(const key of ['body','ol','ul'])c[key].size=16;
     [18,17,16,16,16,16].forEach((size,i)=>c['h'+(i+1)].size=size);
     c.quote.line=25.6;c.quote.unit='px';
@@ -127,7 +129,7 @@ export function experimentConfig(scene='web',group='experiment-one',raw={}){
   const color=control?'#36393f':'#191b1f';
   for(const key of Object.keys(labels))if(key!=='hr')c[key].color=color;
   c.mark.color=c.highlight.color=color;
-  c.rhythm='experiment-v1';c.experimentGroup=group;
+  c.rhythm='experiment-v1';c.experimentGroup=group;c.experimentVersion=2;
   return c;
 }
 export function switchUnit(style,unit) {
