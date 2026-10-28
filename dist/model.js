@@ -88,8 +88,9 @@ export function normalize(raw,scene) {
   if(raw.sizeVersion!==1)applySceneSizes(c,scene);
   if(raw.spacingVersion!==1)applySceneSpacing(c,scene);
   if(c.experimentGroup){
-    if(c.experimentGroup==='experiment-two' && scene==='card' && raw.experimentVersion!==2)applySceneSpacing(c,scene);
-    c.experimentVersion=2;
+    if(c.experimentGroup==='experiment-two' && scene==='card' && Number(raw.experimentVersion||0)<2)applySceneSpacing(c,scene);
+    if(c.experimentGroup!=='experiment-control' && Number(raw.experimentVersion||0)<3)applyExperimentLineHeight(c);
+    c.experimentVersion=3;
   }
   return c;
 }
@@ -108,6 +109,10 @@ export const experimentVersions={
   'experiment-one':'实验组一 · 15px',
   'experiment-two':'实验组二 · 16px'
 };
+function applyExperimentLineHeight(c){
+  for(const key of Object.keys(labels))if(key!=='hr' && key!=='image')Object.assign(c[key],{line:1.7,unit:'multiplier'});
+  return c;
+}
 export function experimentConfig(scene='web',group='experiment-one',raw={}){
   const c=normalize(raw,scene),card=scene==='card',app=scene==='app';
   // Freeze the current version's line rhythm before applying experimental changes.
@@ -129,7 +134,8 @@ export function experimentConfig(scene='web',group='experiment-one',raw={}){
   const color=control?'#36393f':'#191b1f';
   for(const key of Object.keys(labels))if(key!=='hr')c[key].color=color;
   c.mark.color=c.highlight.color=color;
-  c.rhythm='experiment-v1';c.experimentGroup=group;c.experimentVersion=2;
+  if(!control)applyExperimentLineHeight(c);
+  c.rhythm='experiment-v1';c.experimentGroup=group;c.experimentVersion=3;
   return c;
 }
 export function switchUnit(style,unit) {
