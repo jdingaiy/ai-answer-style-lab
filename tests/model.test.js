@@ -74,10 +74,37 @@ test('Figma text tokens migrate across scenes once while retaining custom colors
   assert.ok(css.includes('--MapText02A:#191b1f;--MapText05A:#81858f;'));
   assert.match(css,/blockquote\{[^}]*color:var\(--MapText05A\)/);
   assert.match(css,/\.markdown-body p\{[^}]*color:var\(--MapText02A\)/);
-  assert.doesNotMatch(css,/MapText03A/);
+  assert.match(css,/--MapText03A:#36393f/);
   assert.deepEqual(normalize(c,scene),c);
   c.body.color='#36393f';c.quote.color='#654321';
   const edited=normalize(c,scene);assert.equal(edited.body.color,'#36393f');assert.equal(edited.quote.color,'#654321');
   assert.equal(preset(scene).quote.color,'#81858f');
  }
+});
+
+
+import {experimentConfig,experimentVersions,selectors} from '../dist/model.js';
+import {defaultSnapshot} from '../dist/default-config.js';
+test('experiment groups preserve baseline spacing, colors and typography through persistence',()=>{
+ for(const scene of ['web','app','card']){
+  const raw=defaultSnapshot.configs[scene];
+  const control=experimentConfig(scene,'experiment-control',raw);
+  const one=experimentConfig(scene,'experiment-one',raw);
+  const two=experimentConfig(scene,'experiment-two',raw);
+  for(const [group,c] of Object.entries({'experiment-control':control,'experiment-one':one,'experiment-two':two})){
+   assert.deepEqual(normalize(JSON.parse(JSON.stringify(c)),scene),c);
+   assert.equal(c.quote.size,group==='experiment-two'?16:15);
+   const css=buildCSS(c);
+   assert.match(css,/ul > li::marker\{color:var\(--MapText05A\)/);
+   assert.ok(css.includes(`strong{font-weight:${c.h1.weight};}`));
+   assert.ok(css.includes(`color:var(--${group==='experiment-control'?'MapText03A':'MapText02A'});`));
+  }
+  if(scene==='card'){
+   assert.equal(one.body.size,15);assert.equal(two.body.size,16);
+   assert.equal(two.h1.size,18);assert.equal(two.body.line,1.6);
+   for(const key of Object.keys(selectors))assert.deepEqual([two[key].before,two[key].after],[control[key].before,control[key].after]);
+   assert.equal(control.body.after,8);assert.equal(one.body.after,6);
+  }
+ }
+ assert.equal(Object.keys(experimentVersions).length,3);
 });
