@@ -1,6 +1,6 @@
-import {labels,fonts,experimentVersions,experimentConfig,preset,cssTemplate,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20261028-line-height-v6';
+import {labels,fonts,experimentVersions,experimentConfig,preset,cssTemplate,normalize,switchUnit,buildCSS,buildLegacyCSS,renderMarkdown,sample} from './model.js?v=20261028-quote-05a-v7';
 import {installGapOverlay} from './gaps.js';
-import {defaultSnapshot,previousDefaultSource} from './default-config.js?v=20261028-line-height-v6';
+import {defaultSnapshot,previousDefaultSource} from './default-config.js?v=20261028-quote-05a-v7';
 import {buildFigmaScripterScript} from './figma-export.js?v=20260911-figma-export-v1';
 const $=id=>document.getElementById(id);
 const STORAGE='ai-answer-style-lab-v1',VERSION_LIMIT=30,DEFAULT_CONFIG_VERSION='20260910-fixed-quote-spacing-v17';
