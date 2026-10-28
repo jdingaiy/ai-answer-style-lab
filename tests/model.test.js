@@ -102,9 +102,18 @@ test('experiment groups preserve baseline spacing, colors and typography through
   if(scene==='card'){
    assert.equal(one.body.size,15);assert.equal(two.body.size,16);
    assert.equal(two.h1.size,18);assert.equal(two.body.line,1.6);
-   for(const key of Object.keys(selectors))assert.deepEqual([two[key].before,two[key].after],[control[key].before,control[key].after]);
+   for(const key of Object.keys(selectors))assert.deepEqual([two[key].before,two[key].after],[one[key].before,one[key].after]);
    assert.equal(control.body.after,8);assert.equal(one.body.after,6);
   }
  }
  assert.equal(Object.keys(experimentVersions).length,3);
+});
+
+test('saved experiment two migrates legacy spacing once and preserves later edits',()=>{
+ const c=experimentConfig('card','experiment-two',defaultSnapshot.configs.card);
+ delete c.experimentVersion;c.body.after=8;c.h1.before=0;c.image.after=16;
+ const migrated=normalize(c,'card');
+ assert.equal(migrated.body.after,6);assert.equal(migrated.h1.before,16);assert.equal(migrated.image.after,10);
+ assert.equal(migrated.body.size,16);assert.equal(migrated.h1.size,18);
+ migrated.body.after=9;assert.equal(normalize(migrated,'card').body.after,9);
 });
