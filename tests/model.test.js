@@ -95,7 +95,7 @@ test('experiment groups preserve baseline spacing, colors and typography through
    assert.deepEqual(normalize(JSON.parse(JSON.stringify(c)),scene),c);
    assert.equal(c.quote.size,group==='experiment-two'?16:15);
    const css=buildCSS(c);
-   assert.match(css,/ul > li::marker\{color:var\(--MapText07A\)/);
+   assert.match(css,/ul > li::marker\{color:var\(--MapUIFrame09A\)/);
    assert.ok(css.includes(`strong{font-weight:${c.h1.weight};}`));
    assert.ok(css.includes(`color:var(--${group==='experiment-control'?'MapText03A':'MapText02A'});`));
   }
