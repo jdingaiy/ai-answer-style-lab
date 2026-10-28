@@ -101,7 +101,7 @@ test('experiment groups preserve baseline spacing, colors and typography through
   }
   if(scene==='card'){
    assert.equal(one.body.size,15);assert.equal(two.body.size,16);
-   assert.equal(two.h1.size,18);assert.equal(two.body.line,1.6);
+   assert.equal(two.h1.size,18);assert.equal(two.body.line,1.7);
    for(const key of Object.keys(selectors))assert.deepEqual([two[key].before,two[key].after],[one[key].before,one[key].after]);
    assert.equal(control.body.after,8);assert.equal(one.body.after,6);
   }
@@ -116,4 +116,18 @@ test('saved experiment two migrates legacy spacing once and preserves later edit
  assert.equal(migrated.body.after,6);assert.equal(migrated.h1.before,16);assert.equal(migrated.image.after,10);
  assert.equal(migrated.body.size,16);assert.equal(migrated.h1.size,18);
  migrated.body.after=9;assert.equal(normalize(migrated,'card').body.after,9);
+});
+
+test('both experiments use 1.7 line height in every scene, migrate once and preserve control',()=>{
+ for(const scene of ['web','app','card']){
+  for(const group of ['experiment-one','experiment-two']){
+   const c=experimentConfig(scene,group,defaultSnapshot.configs[scene]);
+   for(const key of ['body','h1','h2','h3','h4','h5','h6','ol','ul','quote','code','table','thead'])assert.deepEqual([c[key].line,c[key].unit],[1.7,'multiplier']);
+   c.experimentVersion=2;c.quote.line=24;c.quote.unit='px';c.body.line=1.6;c.body.after=11;
+   const migrated=normalize(c,scene);assert.equal(migrated.body.line,1.7);assert.equal(migrated.quote.line,1.7);assert.equal(migrated.body.after,11);
+   migrated.body.line=1.8;assert.equal(normalize(migrated,scene).body.line,1.8);
+  }
+  const control=experimentConfig(scene,'experiment-control',defaultSnapshot.configs[scene]);
+  assert.equal(control.h1.line,scene==='card'?24:27);assert.equal(control.code.line,17);
+ }
 });
