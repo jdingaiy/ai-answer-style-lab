@@ -83,7 +83,8 @@ export function normalize(raw,scene) {
     for(const tag of ['mark','highlight'])if(c[tag].color.toLowerCase()==='#36393f')c[tag].color='#191b1f';
   }
   if(raw.aiColorVersion!==1)c.mark.background=c.highlight.background='#574cf8';
-  if(raw.rhythm==='css-20261014')c.rhythm=raw.rhythm;
+  if(['css-20261014','experiment-v1'].includes(raw.rhythm))c.rhythm=raw.rhythm;
+  if(Object.hasOwn(experimentVersions,raw.experimentGroup))c.experimentGroup=raw.experimentGroup;
   if(raw.sizeVersion!==1)applySceneSizes(c,scene);
   if(raw.spacingVersion!==1)applySceneSpacing(c,scene);
   return c;
@@ -96,6 +97,38 @@ export function cssTemplate(base=preset('app'),scene='app'){
   Object.assign(c,{indent:25,itemGap:4,cellPadding:8,columnMin:40,columnMax:240});
   c.image.gap=8;c.hr={before:18,after:18};
   return applySceneSpacing(applySceneSizes(c,scene),scene);
+}
+// Built-in experiment versions are independent snapshots, not saved user versions.
+export const experimentVersions={
+  'experiment-control':'对照组 · 旧版',
+  'experiment-one':'实验组一 · 15px',
+  'experiment-two':'实验组二 · 16px'
+};
+export function experimentConfig(scene='web',group='experiment-one',raw={}){
+  const c=normalize(raw,scene),card=scene==='card',app=scene==='app';
+  // Freeze the current version's line rhythm before applying experimental changes.
+  for(const key of ['body','h1','h2','h3','h4','h5','h6','ol','ul','table','thead'])Object.assign(c[key],{line:card?1.6:1.7,unit:'multiplier'});
+  const control=group==='experiment-control';
+  if(control){
+    const gap=card?8:app?12:16;
+    for(const key of ['body','h1','h2','h3','h4','h5','h6','ol','ul','quote','hr'])Object.assign(c[key],{before:0,after:gap});
+    for(const key of ['image','code','table'])Object.assign(c[key],{before:0,after:16});
+    for(let n=1;n<=6;n++)Object.assign(c['h'+n],{size:n<=2?(card?16:18):(card?15:app?17:16),line:card?24:27,unit:'px',weight:n<=2?(card?600:700):n===3?700:500});
+  }
+  if(group==='experiment-two' && card){
+    const legacy=experimentConfig(scene,'experiment-control',raw);
+    for(const key of Object.keys(selectors))Object.assign(c[key],{before:legacy[key].before,after:legacy[key].after});
+    for(const key of ['body','ol','ul'])c[key].size=16;
+    [18,17,16,16,16,16].forEach((size,i)=>c['h'+(i+1)].size=size);
+    c.quote.line=25.6;c.quote.unit='px';
+  }
+  // Quotes follow this group's search-card body size in all scenes.
+  c.quote.size=group==='experiment-two'?16:15;
+  const color=control?'#36393f':'#191b1f';
+  for(const key of Object.keys(labels))if(key!=='hr')c[key].color=color;
+  c.mark.color=c.highlight.color=color;
+  c.rhythm='experiment-v1';c.experimentGroup=group;
+  return c;
 }
 export function switchUnit(style,unit) {
   if(style.unit===unit)return {...style};
@@ -112,11 +145,11 @@ export function gapSource(c,previous,next) {
   if(after===before)return `${name(previous)}段后 = ${name(next)}段前`;
   return after>before?`${name(previous)}段后`:`${name(next)}段前`;
 }
-const colorValue=value=>({'#191b1f':'var(--MapText02A)','#81858f':'var(--MapText05A)','#e8eaed':'var(--MapUIFrame09A)','#f5f7fa':'var(--MapUIFrame10A)','#084289':'var(--MapLink)','#574cf8':'var(--MapAI)'}[value.toLowerCase()]||value);
+const colorValue=value=>({'#36393f':'var(--MapText03A)','#191b1f':'var(--MapText02A)','#81858f':'var(--MapText05A)','#e8eaed':'var(--MapUIFrame09A)','#f5f7fa':'var(--MapUIFrame10A)','#084289':'var(--MapLink)','#574cf8':'var(--MapAI)'}[value.toLowerCase()]||value);
 const typography=s=>`font-family:${fonts[s.font]};font-size:${s.size}px;line-height:${s.line}${s.unit==='px'?'px':''};font-weight:${s.weight};color:${colorValue(s.color)};`;
 export function buildCSS(c) {
   const all=Object.values(selectors).join(',');
-  let css=`/* AI 回答样式实验室 · 将 Markdown 包裹在 .markdown-body 中。\n * 表格包裹在 .md-table 中。间距=max(上一块段后,下一块段前)，不叠加。\n * 段前/段后以元素盒为基准，不包含字体行框内部留白。 */\n.markdown-body{--MapText02A:#191b1f;--MapText05A:#81858f;--MapUIFrame09A:#e8eaed;--MapUIFrame10A:#f5f7fa;--MapLink:#084289;--MapAI:#574cf8;${typography(c.body)}overflow-wrap:anywhere;display:flow-root;}\n.markdown-body :where(${all}){margin:0;}\n.markdown-body :where(h1,h2,h3,h4,h5,h6){padding:0;}\n`;
+  let css=`/* AI 回答样式实验室 · 将 Markdown 包裹在 .markdown-body 中。\n * 表格包裹在 .md-table 中。间距=max(上一块段后,下一块段前)，不叠加。\n * 段前/段后以元素盒为基准，不包含字体行框内部留白。 */\n.markdown-body{--MapText02A:#191b1f;--MapText05A:#81858f;--MapUIFrame09A:#e8eaed;--MapUIFrame10A:#f5f7fa;--MapLink:#084289;--MapAI:#574cf8;--MapText03A:#36393f;${typography(c.body)}overflow-wrap:anywhere;display:flow-root;}\n.markdown-body :where(${all}){margin:0;}\n.markdown-body :where(h1,h2,h3,h4,h5,h6){padding:0;}\n`;
   for(const [k,selector] of Object.entries(selectors)) {
     if(k!=='hr')css+=`.markdown-body ${selector}{${typography(c[k])}}\n`;
     css+=`.markdown-body ${selector}{margin-block-start:${c[k].before}px;}\n`;
@@ -125,9 +158,9 @@ export function buildCSS(c) {
   const imageWidth=`calc((100% - ${c.image.gap*2}px) / 3)`;
   css+=`.markdown-body figure.md-image{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:${c.image.gap}px;width:min(100%, 440px);max-width:440px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}\n.markdown-body figure.md-image img{display:block;flex:0 0 ${imageWidth};width:${imageWidth};aspect-ratio:1 / 1;height:auto;max-width:none;margin:0;border-radius:4px;object-fit:cover;}\n.markdown-body li > figure.md-image{width:min(100%, 440px);max-width:440px;margin-inline:0;padding-inline:0;}\n`;
   css+=`.markdown-body .md-table > table{min-width:100%;}\n`;
-  css+=`.markdown-body > :first-child,.markdown-body :where(li,blockquote) > :first-child{margin-block-start:0;}\n.markdown-body :where(ol,ul){padding-inline-start:${c.indent}px;}\n.markdown-body li + li{margin-block-start:${c.itemGap}px;}\n.markdown-body li > p,.markdown-body blockquote > p{font:inherit;color:inherit;}\n.markdown-body li > :last-child,.markdown-body blockquote > :last-child{margin-block-end:0;}\n.markdown-body blockquote{border-left:3px solid var(--MapUIFrame09A);padding:2px 0 2px 16px;display:flow-root;}\n.markdown-body pre{padding:16px;background:var(--MapUIFrame10A);border:1px solid var(--MapUIFrame09A);border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.markdown-body pre code{font:inherit;color:inherit;background:none;padding:0;}\n.markdown-body :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:var(--MapUIFrame10A);border-radius:4px;padding:2px 5px;}\n.markdown-body .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid var(--MapUIFrame09A);border-radius:8px;}\n.markdown-body table{width:max-content;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.markdown-body td,.markdown-body th{padding:${c.cellPadding}px;white-space:normal;border-bottom:1px solid var(--MapUIFrame09A);border-right:1px solid var(--MapUIFrame09A);vertical-align:top;text-align:left;}\n.markdown-body td{${typography(c.table)}}\n.markdown-body th{${typography(c.thead)}background:var(--MapUIFrame10A);}\n.markdown-body tr > :last-child{border-right:0;}\n.markdown-body tbody tr:last-child td{border-bottom:0;}\n.markdown-body hr{border:0;height:${c.ruleWidth}px;background:${colorValue(c.ruleColor)};padding:0;}\n.markdown-body a{color:var(--MapLink);text-decoration:none;}\n.markdown-body a:hover{text-decoration:underline;}\n.markdown-body strong{font-weight:700;}\n.markdown-body img{max-width:100%;height:auto;}\n.markdown-body input[type=checkbox]{margin-inline-end:6px;}\n`;
+  css+=`.markdown-body > :first-child,.markdown-body :where(li,blockquote) > :first-child{margin-block-start:0;}\n.markdown-body :where(ol,ul){padding-inline-start:${c.indent}px;}\n.markdown-body li + li{margin-block-start:${c.itemGap}px;}\n.markdown-body li > p,.markdown-body blockquote > p{font:inherit;color:inherit;}\n.markdown-body li > :last-child,.markdown-body blockquote > :last-child{margin-block-end:0;}\n.markdown-body blockquote{border-left:3px solid var(--MapUIFrame09A);padding:2px 0 2px 16px;display:flow-root;}\n.markdown-body pre{padding:16px;background:var(--MapUIFrame10A);border:1px solid var(--MapUIFrame09A);border-radius:8px;overflow:auto;white-space:pre;overflow-wrap:normal;}\n.markdown-body pre code{font:inherit;color:inherit;background:none;padding:0;}\n.markdown-body :not(pre) > code{font-family:${fonts.mono};font-size:.9em;background:var(--MapUIFrame10A);border-radius:4px;padding:2px 5px;}\n.markdown-body .md-table{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;border:1px solid var(--MapUIFrame09A);border-radius:8px;}\n.markdown-body table{width:max-content;table-layout:auto;border-collapse:collapse;font:inherit;color:inherit;}\n.markdown-body td,.markdown-body th{padding:${c.cellPadding}px;white-space:normal;border-bottom:1px solid var(--MapUIFrame09A);border-right:1px solid var(--MapUIFrame09A);vertical-align:top;text-align:left;}\n.markdown-body td{${typography(c.table)}}\n.markdown-body th{${typography(c.thead)}background:var(--MapUIFrame10A);}\n.markdown-body tr > :last-child{border-right:0;}\n.markdown-body tbody tr:last-child td{border-bottom:0;}\n.markdown-body hr{border:0;height:${c.ruleWidth}px;background:${colorValue(c.ruleColor)};padding:0;}\n.markdown-body a{color:var(--MapLink);text-decoration:none;}\n.markdown-body a:hover{text-decoration:underline;}\n.markdown-body strong{font-weight:${c.h1.weight};}\n.markdown-body ul > li::marker{color:var(--MapText05A);}\n.markdown-body img{max-width:100%;height:auto;}\n.markdown-body input[type=checkbox]{margin-inline-end:6px;}\n`;
   const markBackground=`color-mix(in srgb, ${colorValue(c.mark.background)} 20%, transparent)`,highlightBackground=`color-mix(in srgb, ${colorValue(c.highlight.background)} 10%, transparent)`;
-  css+=`.markdown-body mark{background-color:transparent;background-image:linear-gradient(${markBackground},${markBackground});background-repeat:no-repeat;background-position:0 95%;background-size:100% .5em;color:${colorValue(c.mark.color)};font-weight:700;padding:0;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n.markdown-body highlight{display:inline;background-color:${highlightBackground};color:${colorValue(c.highlight.color)};font-weight:inherit;padding:.06em .04em;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
+  css+=`.markdown-body mark{background-color:transparent;background-image:linear-gradient(${markBackground},${markBackground});background-repeat:no-repeat;background-position:0 95%;background-size:100% .5em;color:${colorValue(c.mark.color)};font-weight:${c.h1.weight};padding:0;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n.markdown-body highlight{display:inline;background-color:${highlightBackground};color:${colorValue(c.highlight.color)};font-weight:inherit;padding:.06em .04em;border-radius:0;-webkit-box-decoration-break:clone;box-decoration-break:clone;}\n`;
   css+=`.markdown-body .md-cell{box-sizing:content-box;width:max-content;min-width:${c.columnMin}px;max-width:${Math.max(c.columnMin,c.columnMax)}px;white-space:normal;overflow-wrap:anywhere;word-break:normal;}\n`;
   return css;
 }
@@ -163,3 +196,4 @@ const parser=new Marked({gfm:true,breaks:false,renderer:{
 }});
 export function renderMarkdown(source){let html=parser.parse(source);return html.replace(/(?:<figure class="md-image(?: md-image-group)?">[\s\S]*?<\/figure>\s*)+/g,match=>imageGroups(imageTags(match)));}
 export const sample="# 一、让回答更容易阅读\n\n好的回答应该让读者快速找到结论，也能舒适地阅读细节。这是一段普通正文，用来观察字体、字号、字重和字色是否合适。文字不应过于沉重，也不应显得发灰。\n\n这是第二段正文，用来检查相邻段落之间的距离。你可以比较中文、English、数字 0123456789，以及标点：，。！？；：“”【】（）的显示效果。\n\n**这是加粗文字，用来突出核心结论。** 普通正文与加粗内容应当有清晰区别，但不应产生突兀的视觉跳跃。\n\n## 二、检查标题与正文的关系\n\n二级标题负责划分主要内容。标题下方的正文应当与它形成一个整体，同时与上一段内容保持适当距离。\n\n### 1. 三级标题：说明具体问题\n\n三级标题应当比正文更容易识别，但不需要过分醒目。请观察标题与正文的字重差异，以及多行标题的行高。\n\n#### 四级标题：补充细节\n\n这段正文属于四级标题，检查层级变深后是否仍然容易阅读。\n\n##### 五级标题：进一步说明\n\n低级标题可能主要依靠字重表达层级，检查它是否会与正文中的加粗文字混淆。\n\n###### 六级标题：最细的说明\n\n这是最深一级标题下的正文。即使字号接近正文，仍应能识别它的组织作用。\n\n## 三、检查列表的阅读节奏\n\n### 有序列表\n\n1. **先看结论**：第一项包含加粗文字和普通文字，检查强调是否自然。\n2. **再看依据**：这是一条较长的列表内容，用来检查换行后文字是否与首行内容对齐，以及列表项之间是否保留了足够的空间，让读者不会把相邻两项误读为同一段。\n3. **最后看行动**：结合自己的时间、预算和实际需求，确定下一步。\n   - 补充说明一：检查嵌套列表的缩进。\n   - 补充说明二：检查圆点与文字的距离。\n\n### 无序列表\n\n- 普通列表项，观察圆点大小与文字的位置。\n- **带加粗内容的列表项**，观察它是否过于抢眼。\n- 包含 English、89㎡、18万元、10%–20% 的列表项。\n- 这是一条较长的无序列表内容，用来观察窄屏场景下的换行效果。换行后应保持清晰的左侧对齐，列表整体也不应显得过于拥挤。\n\n## 四、检查引用文字的灰度\n\n> 这是一段引用。引用应当与正文有明确区别，同时保持足够的可读性。请观察它是否太浅、字号是否偏小，以及左侧竖线与文字的距离是否合适。\n\n引用结束后，正文应当自然恢复到正常的字色与字号。\n\n> 这是一段较长的引用，用来检查多行文字在浅色背景上的阅读体验。如果需要仔细辨认才能读清楚，说明引用的灰度、字号或行高需要进一步调整。\n>\n> **引用里的加粗文字**仍然属于引用，应当保留引用字色，只通过字重表达强调。\n>\n> 第二段引用用于检查引用内部的段落关系。\n\n## 五、检查高亮与底部标记\n\n普通文字，<highlight>这是一段整块高亮内容</highlight>，高亮结束后继续普通文字。\n\n<highlight>这是一段需要跨行显示的高亮文字。它包含较长的解释内容，用来观察换行后每一行的底色是否连续、文字是否清楚，以及高亮背景与普通正文之间的关系是否自然。**这里还有一段加粗内容。**</highlight>\n\n普通文字，<mark>这是加粗并带有底部标记的关键结论</mark>，标记结束后继续普通文字。\n\n<mark>这是一段需要跨行显示的底部标记内容。请观察每一行底部的紫色标记是否处于合适的位置，是否遮挡文字，以及较长的加粗句子会不会让整段回答显得过于沉重。</mark>\n\n**普通加粗**、<highlight>整块高亮</highlight>、<mark>底部标记</mark>放在一起时，应当能分辨出三种强调方式。\n\n## 六、检查表格\n\n| 方案 | 核心特点 | 适用情况 | 预算范围 | 时间投入 | 注意事项 |\n| --- | --- | --- | --- | --- | --- |\n| **方案 A** | 简洁直接 | 需求明确 | 5万–8万元 | 较少 | 检查短文本的列宽 |\n| **方案 B** | 兼顾灵活性与效率 | 希望自主调整细节 | 8万–12万元 | 中等 | 这是一段较长的单元格内容，用来检查自动换行、单元格内边距，以及表格正文的字号和行高 |\n| **方案 C** | 个性化程度较高 | 对最终效果有明确要求 | 12万–18万元 | 较多 | 检查窄屏下是否可以顺畅左右滚动 |\n| Mixed 内容 | English / 中文 / 2026 | 多种内容混排 | ¥123,456.78 | 10–20天 | **加粗文字**与普通文字的对比 |\n\n表格后的正文应当与表格保持适当距离，同时恢复正常的正文样式。\n\n## 七、检查链接与代码\n\n这是一段包含[示例链接](https://example.com)的正文。链接应该容易识别，但不应比标题和关键结论更抢眼。\n\n行内代码示例：`font-weight: 600`、`MapText02A`、`0123456789`。请检查它们与中文正文混排时的大小和基线。\n\n```javascript\nconst typography = {\n  bodyColor: \"#191B1F\",\n  quoteColor: \"#81858F\",\n  fontWeight: 400\n};\n\nconsole.log(\"中文、English、数字 0123456789\");\nconst longLine = \"这是一行较长的代码，用来检查代码块在窄屏下的横向滚动，以及等宽字体的显示效果。\";\n```\n\n代码块之后的正文应当恢复正常字体，且与代码块之间保持清晰的间距。\n\n## 八、检查图片与文字的关系\n\n### 单张图片\n\n检查图片与前后正文的距离、缩略图的裁切和圆角，以及不同场景下的图片宽度。\n\n![单张图片测试](https://pic1.zhimg.com/v2-d69314a606fe3c7a4541c396a73f9a84.png)\n\n图片后的正文应当恢复正常的阅读节奏。\n\n### 三张图片排列\n\n使用同一张图片测试三列排列，检查图片之间的间隙、等宽效果和窄屏下的显示。\n\n![三图排列一](https://pic1.zhimg.com/v2-d69314a606fe3c7a4541c396a73f9a84.png) ![三图排列二](https://pic1.zhimg.com/v2-d69314a606fe3c7a4541c396a73f9a84.png) ![三图排列三](https://pic1.zhimg.com/v2-d69314a606fe3c7a4541c396a73f9a84.png)\n\n### 列表中的图片\n\n- **图片与列表文字对齐**：检查缩略图左侧是否与列表内容对齐。\n  ![列表图片测试](https://pic1.zhimg.com/v2-d69314a606fe3c7a4541c396a73f9a84.png)\n- 图片之后的列表项，检查列表项间距是否自然。\n\n---\n\n## 九、最后检查整体感受\n\n快速浏览页面时，标题是否容易找到？连续阅读时，正文是否舒适？引用是否清晰？高亮是否适量？表格、代码和图片是否挤占了太多注意力？\n\n- [ ] 标题层级清楚，正文阅读舒适。\n- [ ] 引用清晰，高亮和底部标记容易区分。\n- [ ] 表格与代码在窄屏下可以正常查看。\n- [ ] 图片排列整齐，与前后文字的距离合适。\n\n**理想的效果是：层级清楚，重点明确，长时间阅读也不会觉得拥挤或疲劳。**";
+
